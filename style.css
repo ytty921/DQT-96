@@ -1,0 +1,65 @@
+:root{--bg:#f8f9fb;--card:#fff;--border:#e5e7eb;--text:#1f2937;--text2:#6b7280;--accent:#4f46e5;--accent-light:#eef2ff;--green:#059669;--green-bg:#ecfdf5;--red:#dc2626;--red-bg:#fef2f2;--yellow:#d97706;--yellow-bg:#fffbeb;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh}
+.hidden{display:none!important}
+.start-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.start-card{background:var(--card);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.08);max-width:560px;width:100%;padding:48px 40px;text-align:center}
+.start-card h1{font-size:28px;font-weight:700;margin-bottom:8px;background:linear-gradient(135deg,#4f46e5,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.start-card .subtitle{font-size:15px;color:var(--text2);margin-bottom:28px}
+.start-info{text-align:left;background:#f9fafb;border-radius:var(--radius);padding:20px 24px;margin-bottom:28px;font-size:14px}
+.start-info dt{font-weight:600;color:var(--text2);margin-top:10px}
+.start-info dt:first-child{margin-top:0}
+.start-info dd{color:var(--text)}
+.dim-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.dim-tag{font-size:12px;padding:3px 10px;border-radius:6px;font-weight:500}
+.dt1{background:#dbeafe;color:#1e40af}.dt2{background:#ede9fe;color:#5b21b6}.dt3{background:#fce7f3;color:#9d174d}.dt4{background:#ffedd5;color:#9a3412}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 32px;border-radius:10px;border:none;font-size:16px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;box-shadow:0 4px 12px rgba(79,70,229,.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(79,70,229,.4)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.quiz-screen{max-width:760px;margin:0 auto;padding:24px}
+.progress-bar-wrap{background:#e5e7eb;border-radius:8px;height:8px;margin-bottom:8px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,#4f46e5,#7c3aed);border-radius:8px;transition:width .4s}
+.progress-meta{display:flex;justify-content:space-between;font-size:13px;color:var(--text2);margin-bottom:20px}
+.q-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 32px}
+.q-badge{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:700;padding:6px 16px;border-radius:20px;margin-bottom:16px;letter-spacing:0.5px}
+.b-single{background:#dbeafe;color:#1e40af}.b-multiple{background:#ede9fe;color:#5b21b6}.b-judge{background:#fce7f3;color:#9d174d}
+.q-dim-badge{font-size:11px;padding:2px 8px;border-radius:12px;margin-left:6px;font-weight:500}
+.q-text{font-size:16px;font-weight:500;line-height:1.8;margin-bottom:20px}
+.options{display:flex;flex-direction:column;gap:10px}
+.option{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all .2s;font-size:14px;line-height:1.6}
+.option:hover{border-color:#a5b4fc;background:#fafaff}
+.option.selected{border-color:var(--accent);background:var(--accent-light)}
+.option input{margin-top:3px;accent-color:var(--accent);flex-shrink:0}
+.option .opt-label{font-weight:600;color:var(--accent);min-width:22px}
+.judge-opts{display:flex;gap:16px;margin-bottom:20px}
+.judge-btn{flex:1;padding:14px;border:2px solid var(--border);border-radius:10px;cursor:pointer;font-size:16px;font-weight:600;text-align:center;transition:all .2s;background:var(--card)}
+.judge-btn:hover{border-color:#a5b4fc}
+.judge-btn.selected{border-color:var(--accent);background:var(--accent-light);color:var(--accent)}
+.submit-wrap{display:flex;justify-content:flex-end;margin-top:20px}
+.result-screen{max-width:800px;margin:0 auto;padding:24px}
+.result-header{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:16px;padding:32px 36px;margin-bottom:24px;text-align:center}
+.result-header h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.result-header .total-score{font-size:52px;font-weight:800;margin:8px 0}
+.result-header .score-label{font-size:14px;opacity:.8}
+.result-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin-bottom:16px}
+.result-card h2{font-size:17px;font-weight:600;margin-bottom:16px}
+.radar-wrap{max-width:380px;margin:0 auto}
+.dim-list{display:flex;flex-direction:column;gap:12px}
+.dim-item{padding:16px 20px;border-radius:10px;border:1px solid var(--border)}
+.dim-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.dim-name{font-weight:600;font-size:15px}
+.dim-score{font-weight:700;font-size:20px}
+.dim-level{font-size:13px;font-weight:600;padding:2px 10px;border-radius:12px}
+.lv-a{background:#ecfdf5;color:#059669}.lv-b{background:#eff6ff;color:#2563eb}.lv-c{background:#fffbeb;color:#d97706}.lv-d{background:#fef2f2;color:#dc2626}
+.dim-bar{height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;margin-bottom:8px}
+.dim-bar-fill{height:100%;border-radius:3px;transition:width 1s}
+.dim-desc{font-size:13px;color:var(--text2);line-height:1.7}
+.weakness-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin-bottom:16px}
+.weakness-card h2{font-size:17px;font-weight:600;margin-bottom:16px;color:var(--yellow)}
+.weakness-item{padding:14px 18px;border-left:3px solid var(--yellow);background:#fffbeb;border-radius:0 8px 8px 0;margin-bottom:12px}
+.weakness-item:last-child{margin-bottom:0}
+.weakness-item h3{font-size:14px;font-weight:600;color:#92400e;margin-bottom:4px}
+.weakness-item p{font-size:13px;color:#78350f;line-height:1.7}
+.restart-wrap{text-align:center;margin-top:24px;padding-bottom:48px}
+@media(max-width:640px){.start-card{padding:32px 20px}.q-card{padding:20px 16px}.result-header{padding:24px 20px}.result-header .total-score{font-size:36px}.radar-wrap{max-width:280px}}
