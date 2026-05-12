@@ -150,16 +150,16 @@ function checkAnswer(q,ua){
   return false;
 }
 
-function diffCoeff(d){return d===1?1.0:d===2?1.5:2.0;}
+function difficultyBonus(d){return d===1?0:d===2?0.5:1.0;}
 
 function getScore(q,ua){
-  let c=diffCoeff(q.diff);
-  if(q.type==='single'||q.type==='judge')return checkAnswer(q,ua)?q.pts*c:0;
+  let bonus=difficultyBonus(q.diff);
+  if(q.type==='single'||q.type==='judge')return checkAnswer(q,ua)?1.0+bonus:0;
   if(q.type==='multiple'){
     let uas=new Set(ua||[]),cas=new Set(q.ans);
     if([...uas].some(a=>!cas.has(a)))return 0;
     let overlap=[...uas].filter(a=>cas.has(a)).length;
-    return overlap===cas.size?q.pts*c:1*c;
+    return overlap===cas.size?1.0+bonus:1.0;
   }
   return 0;
 }
@@ -168,14 +168,14 @@ function submitAnswer(){
   let q=selectedQ[currentIdx];
   let ua=window._selected;
   let score=getScore(q,ua);
-  let d=q.dim,coeff=diffCoeff(q.diff);
+  let d=q.dim;
 
   // If re-answering, revert old score (but keep answered/maxPts since question stays)
   if(userAnswers[currentIdx]){
     dimState[d].totalPts-=userAnswers[currentIdx].score;
   }else{
     dimState[d].answered++;
-    dimState[d].maxPts+=q.pts*coeff;
+    dimState[d].maxPts+=1.0;
   }
   dimState[d].totalPts+=score;
 
@@ -249,7 +249,7 @@ function showResult(){
   for(let d=1;d<=4;d++){
     let s=dimScores[d],m=dimMaxes[d],p=m>0?Math.round(s/m*100):0;
     let lv,lvCls;if(p>=80){lv='\u4f18\u79c0';lvCls='lv-a';}else if(p>=60){lv='\u826f\u597d';lvCls='lv-b';}else if(p>=40){lv='\u5f85\u63d0\u5347';lvCls='lv-c';}else{lv='\u8584\u5f31';lvCls='lv-d';}
-    html+='<div class="dim-item"><div class="dim-head"><span class="dim-name">'+DIM_NAMES[d]+'</span><span><span class="dim-score" style="color:'+DIM_COLORS[d]+'">'+p+'\u5206</span> <span class="dim-level '+lvCls+'">'+lv+'</span></span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:'+p+'%;background:'+DIM_COLORS[d]+'"></div></div><div class="dim-desc">'+getDimDesc(d,p)+'</div></div>';
+    html+='<div class="dim-item"><div class="dim-head"><span class="dim-name">'+DIM_NAMES[d]+'</span><span><span class="dim-score" style="color:'+DIM_COLORS[d]+'">'+p+'\u5206</span> <span class="dim-level '+lvCls+'">'+lv+'</span></span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:'+Math.min(p,100)+'%;background:'+DIM_COLORS[d]+'"></div></div><div class="dim-desc">'+getDimDesc(d,p)+'</div></div>';
   }
   html+='</div></div>';
 
@@ -281,7 +281,10 @@ function showResult(){
 
   setTimeout(()=>{
     let ctx=document.getElementById('radarChart');
-    if(ctx){window._radarChart=new Chart(ctx,{type:'radar',data:{labels:DIM_NAMES.slice(1),datasets:[{label:'\u5f97\u5206',data:DIM_NAMES.slice(1).map((_,i)=>dimMaxes[i+1]>0?Math.round(dimScores[i+1]/dimMaxes[i+1]*100):0),backgroundColor:'rgba(79,70,229,0.15)',borderColor:'#4f46e5',borderWidth:2,pointBackgroundColor:'#4f46e5',pointRadius:4},{label:'\u57fa\u51c6\u7ebf',data:[60,60,60,60],backgroundColor:'rgba(156,163,175,0.05)',borderColor:'#9ca3af',borderWidth:1,borderDash:[4,4],pointRadius:0}]},options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:20,font:{size:11}},pointLabels:{font:{size:13,weight:'600'}}}},plugins:{legend:{display:false}}}});}
+    if(ctx){
+      let radarData=DIM_NAMES.slice(1).map((_,i)=>dimMaxes[i+1]>0?Math.round(dimScores[i+1]/dimMaxes[i+1]*100):0);
+      let radarMax=Math.max(100,Math.ceil(Math.max(...radarData)/20)*20);
+      window._radarChart=new Chart(ctx,{type:'radar',data:{labels:DIM_NAMES.slice(1),datasets:[{label:'\u5f97\u5206',data:radarData,backgroundColor:'rgba(79,70,229,0.15)',borderColor:'#4f46e5',borderWidth:2,pointBackgroundColor:'#4f46e5',pointRadius:4},{label:'\u57fa\u51c6\u7ebf',data:[60,60,60,60],backgroundColor:'rgba(156,163,175,0.05)',borderColor:'#9ca3af',borderWidth:1,borderDash:[4,4],pointRadius:0}]},options:{responsive:true,scales:{r:{min:0,max:radarMax,ticks:{stepSize:20,font:{size:11}},pointLabels:{font:{size:13,weight:'600'}}}},plugins:{legend:{display:false}}}});}
   },100);
 }
 
