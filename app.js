@@ -1,5 +1,5 @@
 const DIM_NAMES=['','数据敏感性','量化抽象力','逻辑推演力','决策校准力'];
-const DIM_COLORS=['','#5A6B7A','#3D4349','#5A6B7A','#3D4349'];
+const DIM_COLORS=['','#5A7F99','#3D566E','#5A7F99','#3D566E'];
 const TOTAL_Q=36;
 const MIN_PER_DIM=9;
 
@@ -399,21 +399,21 @@ function downloadPdf(){
   pw.document.write('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>DQT \u6d4b\u8bc4\u62a5\u544a</title>');
   pw.document.write('<style>');
   pw.document.write('*{margin:0;padding:0;box-sizing:border-box}');
-  pw.document.write('body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#3D4349;line-height:1.7;padding:0}');
+  pw.document.write('body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#3D566E;line-height:1.7;padding:0}');
   pw.document.write('.report{max-width:700px;margin:0 auto;padding:30px 40px}');
-  pw.document.write('.header{text-align:center;border-bottom:1px solid #8FA3B3;padding-bottom:20px;margin-bottom:24px}');
-  pw.document.write('.header h1{font-size:24px;color:#5A6B7A;margin-bottom:4px}');
-  pw.document.write('.header .stars{font-size:36px;margin:8px 0;letter-spacing:6px;color:#5A6B7A}');
-  pw.document.write('.header .badge{display:inline-block;font-size:16px;font-weight:700;padding:4px 18px;border-radius:20px;margin-top:4px;background:#eef2f5;color:#5A6B7A}');
-  pw.document.write('.header .meta{font-size:13px;color:#8FA3B3}');
+  pw.document.write('.header{text-align:center;border-bottom:1px solid #A9BFD1;padding-bottom:20px;margin-bottom:24px}');
+  pw.document.write('.header h1{font-size:24px;color:#5A7F99;margin-bottom:4px}');
+  pw.document.write('.header .stars{font-size:36px;margin:8px 0;letter-spacing:6px;color:#5A7F99}');
+  pw.document.write('.header .badge{display:inline-block;font-size:16px;font-weight:700;padding:4px 18px;border-radius:20px;margin-top:4px;background:#e8eff5;color:#5A7F99}');
+  pw.document.write('.header .meta{font-size:13px;color:#A9BFD1}');
   pw.document.write('.section{margin-bottom:24px}');
-  pw.document.write('.section h2{font-size:16px;font-weight:700;border-left:3px solid #5A6B7A;padding-left:10px;margin-bottom:12px;color:#5A6B7A}');
+  pw.document.write('.section h2{font-size:16px;font-weight:700;border-left:3px solid #5A7F99;padding-left:10px;margin-bottom:12px;color:#5A7F99}');
   pw.document.write('table{width:100%;border-collapse:collapse;font-size:13px}');
-  pw.document.write('th,td{border:1px solid #8FA3B3;padding:10px 12px;text-align:left}');
-  pw.document.write('th{background:#eef2f5;font-weight:600;color:#5A6B7A}');
-  pw.document.write('.weak-card{background:#eef2f5;border-left:3px solid #5A6B7A;padding:12px 16px;margin-bottom:10px;border-radius:0 6px 6px 0}');
-  pw.document.write('.weak-card h3{font-size:14px;color:#3D4349;margin-bottom:4px}');
-  pw.document.write('.weak-card p{font-size:13px;color:#5A6B7A}');
+  pw.document.write('th,td{border:1px solid #A9BFD1;padding:10px 12px;text-align:left}');
+  pw.document.write('th{background:#e8eff5;font-weight:600;color:#5A7F99}');
+  pw.document.write('.weak-card{background:#e8eff5;border-left:3px solid #5A7F99;padding:12px 16px;margin-bottom:10px;border-radius:0 6px 6px 0}');
+  pw.document.write('.weak-card h3{font-size:14px;color:#3D566E;margin-bottom:4px}');
+  pw.document.write('.weak-card p{font-size:13px;color:#5A7F99}');
   pw.document.write('.chart-wrap{max-width:360px;margin:0 auto 20px}');
   pw.document.write('.footer{text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px;margin-top:20px}');
   pw.document.write('@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.report{padding:0}}');
@@ -421,10 +421,10 @@ function downloadPdf(){
   
   // Header
   pw.document.write('<div class="header"><h1>\u6570\u636e\u601d\u7ef4\u80fd\u529b\u6d4b\u8bc4\u62a5\u544a</h1>');
-  if(userName){pw.document.write('<div style="font-size:16px;color:#3D4349;margin-bottom:4px">'+userName+'</div>');}
+  if(userName){pw.document.write('<div style="font-size:16px;color:#3D566E;margin-bottom:4px">'+userName+'</div>');}
   pw.document.write('<div class="stars">'+'\u2605'.repeat(overallLv.stars)+'\u2606'.repeat(4-overallLv.stars)+'</div>');
   pw.document.write('<div class="badge">'+overallLv.level+'</div>');
-  pw.document.write('<div style="font-size:14px;color:#5A6B7A;margin-top:6px">'+overallLv.desc+'</div>');
+  pw.document.write('<div style="font-size:14px;color:#5A7F99;margin-top:6px">'+overallLv.desc+'</div>');
   pw.document.write('<div class="meta">\u7528\u65f6 '+durStr+' \uff5c '+ts+'</div></div>');
   
   // Dimension table
