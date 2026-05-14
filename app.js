@@ -7,7 +7,7 @@ let allQ=[],selectedQ=[],currentIdx=0;
 let userAnswers=[]; // {answer, score} per index
 let startTime=0,testId='';
 let userName='';
-const SHEET_URL='https://script.google.com/macros/s/AKfycbxhowV5d7BRoMP9zXUZqiwRSQauQQyW991AaGw37vRC0knIxeYPL9mOUjuAKqKTAjXV/exec';
+const SHEET_URL='https://script.google.com/macros/s/AKfycbzNYj1qAM4_QFDuzGVz-MijZU_Ae6Dw0YWBR-ffSO4WxoEvS20dn7mj8W2FX-CwV7pJDg/exec';
 let dimState={1:{answered:0,totalPts:0,maxPts:0},2:{answered:0,totalPts:0,maxPts:0},3:{answered:0,totalPts:0,maxPts:0},4:{answered:0,totalPts:0,maxPts:0}};
 
 fetch('questions.json').then(r=>r.json()).then(data=>{allQ=data;});
