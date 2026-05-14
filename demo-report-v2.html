@@ -1,0 +1,99 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>DQT 测评报告</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#fff;color:#3D4349;line-height:1.7;padding:40px 24px}
+h2{text-align:center;font-size:22px;color:#5A6B7A;margin:48px 0 8px;font-weight:700}
+h2:first-child{margin-top:0}
+sub{display:block;text-align:center;color:#8FA3B3;font-size:13px;margin-bottom:24px;font-weight:400}
+.result-screen{max-width:800px;margin:0 auto 48px}
+.result-header{background:#5A6B7A;color:#fff;border-radius:16px;padding:32px 36px;margin-bottom:24px;text-align:center}
+.result-header h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.star-rating{display:flex;justify-content:center;gap:6px;margin:12px 0 8px}
+.star-large{font-size:36px;line-height:1}
+.star-large.filled{color:rgba(255,255,255,.9)}
+.star-large.empty{font-size:36px;color:rgba(255,255,255,.25);line-height:1}
+.level-badge{display:inline-block;font-size:15px;font-weight:700;padding:4px 20px;border-radius:20px;margin:4px 0 8px;background:rgba(255,255,255,.15);color:#fff}
+.level-desc{font-size:13px;opacity:.85;margin-bottom:8px;line-height:1.6;max-width:420px;margin:0 auto}
+.score-label{font-size:13px;opacity:.55}
+.user-name-label{font-size:16px;color:rgba(255,255,255,.85);font-weight:600;margin-bottom:4px}
+.result-card{background:#fff;border:1px solid #8FA3B3;border-radius:12px;padding:24px 28px;margin-bottom:16px}
+.result-card h2{font-size:17px;font-weight:600;margin:0 0 16px;text-align:left;color:#5A6B7A}
+.dim-list{display:flex;flex-direction:column;gap:12px}
+.dim-item{padding:16px 20px;border-radius:10px;border:1px solid #8FA3B3;background:#fff}
+.dim-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.dim-name{font-weight:600;font-size:15px;color:#3D4349}
+.dim-stars{display:flex;align-items:center;gap:4px}
+.star-small{font-size:16px;line-height:1}
+.star-small.empty{font-size:16px;color:#c8d0d8;line-height:1}
+.dim-level{font-size:13px;font-weight:600;padding:2px 10px;border-radius:12px}
+.lv-a{background:#eef2f5;color:#5A6B7A}.lv-b{background:#eef2f5;color:#5A6B7A}
+.lv-c{background:#f5f6f8;color:#5A6B7A}.lv-d{background:#f5f6f8;color:#8FA3B3}
+.dim-bar{height:4px;background:#e8ecf0;border-radius:2px;overflow:hidden;margin-bottom:8px}
+.dim-bar-fill{height:100%;border-radius:2px}
+.dim-desc{font-size:13px;color:#5A6B7A;line-height:1.7}
+.weakness-card{background:#fff;border:1px solid #8FA3B3;border-radius:12px;padding:24px 28px;margin-bottom:16px}
+.weakness-card h2{font-size:17px;font-weight:600;margin:0 0 16px;text-align:left;color:#5A6B7A}
+.weakness-item{padding:14px 18px;border-left:3px solid #5A6B7A;background:#eef2f5;border-radius:0 8px 8px 0;margin-bottom:12px}
+.weakness-item:last-child{margin-bottom:0}
+.weakness-item h3{font-size:14px;font-weight:600;color:#3D4349;margin-bottom:4px}
+.weakness-item p{font-size:13px;color:#5A6B7A;line-height:1.7}
+.result-actions{display:flex;gap:12px;justify-content:center;margin-top:24px;padding-bottom:24px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 32px;border-radius:10px;border:none;font-size:16px;font-weight:600}
+.btn-primary{background:#5A6B7A;color:#fff}
+.btn-restart{background:#fff;color:#3D4349;border:1px solid #8FA3B3}
+</style></head><body>
+
+<h2>示例 A<sub>优秀 · 四维均衡</sub></h2>
+<div class="result-screen">
+<div class="result-header"><h1>数据思维能力测评报告</h1><div class="user-name-label">张小凡</div>
+<div class="star-rating"><span class="star-large filled">★</span><span class="star-large filled">★</span><span class="star-large filled">★</span><span class="star-large filled">★</span><span class="star-large empty">☆</span></div>
+<div class="level-badge">优秀</div><div class="level-desc">数据思维突出，能在信息不完全的情况下做出理性判断。</div><div class="score-label">用时 18分32秒</div></div>
+<div class="result-card"><h2>能力概览</h2><div class="dim-list">
+<div class="dim-item"><div class="dim-head"><span class="dim-name">数据敏感性</span><span class="dim-stars"><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small empty">☆</span></span><span class="dim-level lv-a">优秀</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:85%;background:#5A6B7A"></div></div><div class="dim-desc">能敏锐察觉数据中的异常信号，对统计口径差异保持警觉。</div></div>
+<div class="dim-item"><div class="dim-head"><span class="dim-name">量化抽象力</span><span class="dim-stars"><span class="star-small" style="color:#3D4349">★</span><span class="star-small" style="color:#3D4349">★</span><span class="star-small" style="color:#3D4349">★</span><span class="star-small" style="color:#3D4349">★</span><span class="star-small empty">☆</span></span><span class="dim-level lv-a">优秀</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:82%;background:#3D4349"></div></div><div class="dim-desc">善于将模糊概念转化为可量化指标，能用数据刻画抽象问题。</div></div>
+<div class="dim-item"><div class="dim-head"><span class="dim-name">逻辑推演力</span><span class="dim-stars"><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span></span><span class="dim-level lv-b">良好</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:72%;background:#5A6B7A"></div></div><div class="dim-desc">能识别常见的相关≠因果陷阱，对混淆变量有基本警惕。</div></div>
+<div class="dim-item"><div class="dim-head"><span class="dim-name">决策校准力</span><span class="dim-stars"><span class="star-small" style="color:#3D4349">★</span><span class="star-small" style="color:#3D4349">★</span><span class="star-small" style="color:#3D4349">★</span><span class="star-small" style="color:#3D4349">★</span><span class="star-small empty">☆</span></span><span class="dim-level lv-a">优秀</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:88%;background:#3D4349"></div></div><div class="dim-desc">决策时能区分可逆与不可逆，善于在信息不完备时做阶段性判断。</div></div>
+</div></div>
+<div class="result-actions"><button class="btn btn-primary">导出 PDF 报告</button><button class="btn btn-restart">重新测评</button></div>
+</div>
+
+<h2>示例 B<sub>待提升 · 两弱一良</sub></h2>
+<div class="result-screen">
+<div class="result-header"><h1>数据思维能力测评报告</h1><div class="user-name-label">王大林</div>
+<div class="star-rating"><span class="star-large filled">★</span><span class="star-large filled">★</span><span class="star-large empty">☆</span><span class="star-large empty">☆</span><span class="star-large empty">☆</span></div>
+<div class="level-badge">待提升</div><div class="level-desc">有基本的数据识别能力，部分维度已建立初步思维框架，需要系统性训练。</div><div class="score-label">用时 22分05秒</div></div>
+<div class="result-card"><h2>能力概览</h2><div class="dim-list">
+<div class="dim-item"><div class="dim-head"><span class="dim-name">数据敏感性</span><span class="dim-stars"><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span></span><span class="dim-level lv-c">待提升</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:45%;background:#5A6B7A"></div></div><div class="dim-desc">能注意到明显的数据异常，但对统计口径、数据来源的警觉不足。</div></div>
+<div class="dim-item"><div class="dim-head"><span class="dim-name">量化抽象力</span><span class="dim-stars"><span class="star-small" style="color:#3D4349">★</span><span class="star-small" style="color:#3D4349">★</span><span class="star-small" style="color:#3D4349">★</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span></span><span class="dim-level lv-b">良好</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:65%;background:#3D4349"></div></div><div class="dim-desc">能对日常问题进行基本的量化建模，有一定抽象转化能力。</div></div>
+<div class="dim-item"><div class="dim-head"><span class="dim-name">逻辑推演力</span><span class="dim-stars"><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span></span><span class="dim-level lv-d">薄弱</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:28%;background:#5A6B7A"></div></div><div class="dim-desc">容易被表面相关误导为因果，对控制变量和对照组的意识较弱。</div></div>
+<div class="dim-item"><div class="dim-head"><span class="dim-name">决策校准力</span><span class="dim-stars"><span class="star-small" style="color:#3D4349">★</span><span class="star-small" style="color:#3D4349">★</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span></span><span class="dim-level lv-c">待提升</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:42%;background:#3D4349"></div></div><div class="dim-desc">决策偏向直觉驱动，对可逆性、信息充分度的判断有待加强。</div></div>
+</div></div>
+<div class="weakness-card"><h2>提升建议</h2>
+<div class="weakness-item"><h3>逻辑推演力</h3><p>重点训练「相关≠因果」的思维习惯。遇到「XX导致YY」时主动问：是否存在第三个因素？有没有对照组？</p></div>
+<div class="weakness-item"><h3>决策校准力</h3><p>为日常决策建立「可逆性评分」：花30秒想一下，如果做错了挽回成本是多少？成本越低越不需要过度分析。</p></div>
+<div class="weakness-item"><h3>数据敏感性</h3><p>培养核查数据来源的习惯：看到一个数字时追问「谁统计的？什么口径？有没有可能漏了什么？」</p></div>
+</div>
+<div class="result-actions"><button class="btn btn-primary">导出 PDF 报告</button><button class="btn btn-restart">重新测评</button></div>
+</div>
+
+<h2>示例 C<sub>薄弱 · 四维全需提升</sub></h2>
+<div class="result-screen">
+<div class="result-header"><h1>数据思维能力测评报告</h1><div class="user-name-label">李小萌</div>
+<div class="star-rating"><span class="star-large filled">★</span><span class="star-large empty">☆</span><span class="star-large empty">☆</span><span class="star-large empty">☆</span><span class="star-large empty">☆</span></div>
+<div class="level-badge">薄弱</div><div class="level-desc">基础数据意识有待建立，日常生活中容易凭感觉而非数据做判断。</div><div class="score-label">用时 15分10秒</div></div>
+<div class="result-card"><h2>能力概览</h2><div class="dim-list">
+<div class="dim-item"><div class="dim-head"><span class="dim-name">数据敏感性</span><span class="dim-stars"><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span></span><span class="dim-level lv-d">薄弱</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:22%;background:#5A6B7A"></div></div><div class="dim-desc">对数据异常不敏感，容易接受表面数字而不追问来源。</div></div>
+<div class="dim-item"><div class="dim-head"><span class="dim-name">量化抽象力</span><span class="dim-stars"><span class="star-small" style="color:#3D4349">★</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span></span><span class="dim-level lv-d">薄弱</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:18%;background:#3D4349"></div></div><div class="dim-desc">偏好定性描述而非定量分析，缺少将观察转化为数字的习惯。</div></div>
+<div class="dim-item"><div class="dim-head"><span class="dim-name">逻辑推演力</span><span class="dim-stars"><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small" style="color:#5A6B7A">★</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span></span><span class="dim-level lv-c">待提升</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:44%;background:#5A6B7A"></div></div><div class="dim-desc">有一定的常识判断能力，但遇到复杂因果链时容易产生直觉偏差。</div></div>
+<div class="dim-item"><div class="dim-head"><span class="dim-name">决策校准力</span><span class="dim-stars"><span class="star-small" style="color:#3D4349">★</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span><span class="star-small empty">☆</span></span><span class="dim-level lv-d">薄弱</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:25%;background:#3D4349"></div></div><div class="dim-desc">决策容易受情绪和锚定效应影响，缺少系统的权衡框架。</div></div>
+</div></div>
+<div class="weakness-card"><h2>提升建议</h2>
+<div class="weakness-item"><h3>量化抽象力</h3><p>从最简单的练习开始：每天选一件事用数字描述（如通勤耗时、屏幕使用时间），坚持两周。</p></div>
+<div class="weakness-item"><h3>数据敏感性</h3><p>养成「看到数字就问三个问题」的习惯：谁统计的？用什么方法？有没有可能算错了？</p></div>
+<div class="weakness-item"><h3>决策校准力</h3><p>对日常消费设置底线：超过500元货比三家，超过5000元隔夜再决定。</p></div>
+<div class="weakness-item"><h3>逻辑推演力</h3><p>阅读科普文章时刻意区分「作者观察到了什么」和「作者推断了什么」，两者常被混为一谈。</p></div>
+</div>
+<div class="result-actions"><button class="btn btn-primary">导出 PDF 报告</button><button class="btn btn-restart">重新测评</button></div>
+</div>
+
+</body></html>

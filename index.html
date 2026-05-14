@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>数据思维能力测试</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -26,7 +25,19 @@
     <dt>出题方式</dt><dd>自适应——根据作答表现动态调整难度与维度侧重</dd>
     <dt>建议用时</dt><dd>约30分钟</dd>
   </dl>
-  <button class="btn btn-primary" onclick="startQuiz()">开始测评</button>
+  <button class="btn btn-primary" onclick="showNameScreen()">开始测评</button>
+</div>
+</div>
+
+<!-- 姓名输入页 -->
+<div id="nameScreen" class="name-screen hidden">
+<div class="start-card">
+  <h1>数据思维能力测试</h1>
+  <div class="subtitle">请输入您的姓名后开始测评</div>
+  <div class="name-input-wrap">
+    <input type="text" id="nameInput" class="name-input" placeholder="请输入您的姓名" autocomplete="name" oninput="onNameInput()">
+  </div>
+  <button class="btn btn-primary" onclick="confirmName()" id="nameBtn" disabled>开始测评</button>
 </div>
 </div>
 

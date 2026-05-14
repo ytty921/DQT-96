@@ -1,15 +1,34 @@
 const DIM_NAMES=['','数据敏感性','量化抽象力','逻辑推演力','决策校准力'];
-const DIM_COLORS=['','#3b82f6','#7c3aed','#ec4899','#f97316'];
+const DIM_COLORS=['','#5A6B7A','#3D4349','#5A6B7A','#3D4349'];
 const TOTAL_Q=36;
 const MIN_PER_DIM=9;
 
 let allQ=[],selectedQ=[],currentIdx=0;
 let userAnswers=[]; // {answer, score} per index
 let startTime=0,testId='';
+let userName='';
 const SHEET_URL='https://script.google.com/macros/s/AKfycbxhowV5d7BRoMP9zXUZqiwRSQauQQyW991AaGw37vRC0knIxeYPL9mOUjuAKqKTAjXV/exec';
 let dimState={1:{answered:0,totalPts:0,maxPts:0},2:{answered:0,totalPts:0,maxPts:0},3:{answered:0,totalPts:0,maxPts:0},4:{answered:0,totalPts:0,maxPts:0}};
 
 fetch('questions.json').then(r=>r.json()).then(data=>{allQ=data;});
+
+function showNameScreen(){
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('nameScreen').classList.remove('hidden');
+  document.getElementById('nameInput').focus();
+}
+
+function onNameInput(){
+  let val=document.getElementById('nameInput').value.trim();
+  document.getElementById('nameBtn').disabled=!val;
+}
+
+function confirmName(){
+  userName=document.getElementById('nameInput').value.trim();
+  if(!userName)return;
+  document.getElementById('nameScreen').classList.add('hidden');
+  startQuiz();
+}
 
 function startQuiz(){
   // Check for saved progress
@@ -22,6 +41,7 @@ function startQuiz(){
       dimState=progress.dimState;
       startTime=progress.startTime||Date.now();
       testId=progress.testId||(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8));
+      if(progress.userName) userName=progress.userName;
       document.getElementById('startScreen').classList.add('hidden');
       document.getElementById('quizScreen').classList.remove('hidden');
       renderQuestion();
@@ -82,8 +102,8 @@ function renderQuestion(){
   document.getElementById('progressBar').style.width=pct+'%';
   document.getElementById('progressText').textContent=Math.min(currentIdx+1,TOTAL_Q)+' / '+TOTAL_Q;
   document.getElementById('dimIndicator').textContent=DIM_NAMES[q.dim];
-  let typeLabel=q.type==='single'?'单选题':q.type==='multiple'?'多选题':'判断题';
-  let typeCls=q.type==='single'?'b-single':q.type==='multiple'?'b-multiple':'b-judge';
+  let typeLabel=q.type==='single'?'单选题':q.type==='multiple'?'多选题':q.type==='judge'?'判断题':'排序题';
+  let typeCls=q.type==='single'?'b-single':q.type==='multiple'?'b-multiple':q.type==='judge'?'b-judge':'b-rank';
   let html='<div class="q-badge '+typeCls+'">'+typeLabel+'</div>';
   html+='<div class="q-text">'+q.q+'</div>';
 
@@ -93,6 +113,25 @@ function renderQuestion(){
     html+='<div class="judge-btn'+(saved&&saved.answer===false?' selected':'')+'" onclick="selectJudge(this,false)">\u2718 错误</div>';
     html+='</div>';
     if(saved){window._selected=saved.answer;}else{window._selected=null;}
+  }else if(q.type==='rank'){
+    let n=q.opts.length;
+    let labels='ABCDEFGH';
+    let posLabels=['\u7b2c1\u4f4d','\u7b2c2\u4f4d','\u7b2c3\u4f4d','\u7b2c4\u4f4d','\u7b2c5\u4f4d','\u7b2c6\u4f4d'];
+    html+='<div class="rank-opts">';
+    q.opts.forEach((o,i)=>{
+      let selPos=saved&&saved.answer?saved.answer[i]:null;
+      html+='<div class="rank-row"><span class="rank-label">'+labels[i]+'. '+o+'</span><div class="rank-positions">';
+      for(let p=0;p<n;p++){
+        let occupied=saved&&saved.answer?saved.answer.indexOf(p):-1;
+        let isSel=selPos===p;
+        let disabled=occupied>=0&&occupied!==i;
+        html+='<button class="rank-pos-btn'+(isSel?' selected':'')+'" onclick="selectRank('+i+','+p+',this)"'+(disabled?' disabled':'')+'>'+(p+1)+'</button>';
+      }
+      html+='</div></div>';
+    });
+    html+='</div>';
+    if(saved){window._selected=saved.answer;}else{window._selected=Array(n).fill(null);}
+    window._rankN=n;
   }else{
     html+='<div class="options">';
     let labels='ABCDEFGH';
@@ -143,6 +182,34 @@ function selectJudge(el,val){
   document.getElementById('submitBtn').disabled=false;
 }
 
+function selectRank(optIdx,pos,btn){
+  if(!Array.isArray(window._selected))window._selected=Array(window._rankN||4).fill(null);
+  // Toggle off if same position
+  if(window._selected[optIdx]===pos){
+    window._selected[optIdx]=null;
+    btn.classList.remove('selected');
+  }else{
+    // Clear old selection for this option row
+    let row=btn.closest('.rank-row');
+    row.querySelectorAll('.rank-pos-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    window._selected[optIdx]=pos;
+  }
+  // Refresh disabled states: each position can only be used once
+  let allRows=document.querySelectorAll('.rank-row');
+  allRows.forEach((row,ri)=>{
+    row.querySelectorAll('.rank-pos-btn').forEach((b,pi)=>{
+      let taken=window._selected.some((p,j)=>p===pi&&j!==ri);
+      b.disabled=taken;
+      b.style.opacity=taken?'0.3':'';
+      b.style.cursor=taken?'not-allowed':'';
+    });
+  });
+  // Enable submit only when all positions assigned
+  let allSet=window._selected.every(p=>p!==null);
+  document.getElementById('submitBtn').disabled=!allSet;
+}
+
 function checkAnswer(q,ua){
   if(q.type==='single')return ua===q.ans;
   if(q.type==='judge')return ua===q.ans;
@@ -150,16 +217,24 @@ function checkAnswer(q,ua){
   return false;
 }
 
-function difficultyBonus(d){return d===1?0:d===2?0.5:1.0;}
+function diffCoeff(d){return d===1?1.0:d===2?1.5:2.0;}
 
 function getScore(q,ua){
-  let bonus=difficultyBonus(q.diff);
-  if(q.type==='single'||q.type==='judge')return checkAnswer(q,ua)?1.0+bonus:0;
+  let c=diffCoeff(q.diff);
+  if(q.type==='single'||q.type==='judge')return checkAnswer(q,ua)?c:0;
   if(q.type==='multiple'){
     let uas=new Set(ua||[]),cas=new Set(q.ans);
     if([...uas].some(a=>!cas.has(a)))return 0;
     let overlap=[...uas].filter(a=>cas.has(a)).length;
-    return overlap===cas.size?1.0+bonus:1.0;
+    return overlap===cas.size?2*c:c;
+  }
+  if(q.type==='rank'){
+    if(!ua||ua.length!==q.ans.length)return 0;
+    let correctPos=0;
+    for(let i=0;i<ua.length;i++){if(ua[i]===q.ans[i])correctPos++;}
+    if(correctPos===ua.length)return 2*c;
+    if(correctPos>=Math.ceil(ua.length/2))return c;
+    return 0;
   }
   return 0;
 }
@@ -175,7 +250,7 @@ function submitAnswer(){
     dimState[d].totalPts-=userAnswers[currentIdx].score;
   }else{
     dimState[d].answered++;
-    dimState[d].maxPts+=1.0;
+    dimState[d].maxPts+=q.type==='multiple'||q.type==='rank'?2*diffCoeff(q.diff):diffCoeff(q.diff);
   }
   dimState[d].totalPts+=score;
 
@@ -207,7 +282,7 @@ function goPrev(){
 // === Persistence ===
 function saveProgress(){
   try{
-    let p={selectedQ,currentIdx,userAnswers,dimState,startTime,testId,savedAt:new Date().toISOString()};
+    let p={selectedQ,currentIdx,userAnswers,dimState,startTime,testId,userName,savedAt:new Date().toISOString()};
     localStorage.setItem('dqt_progress',JSON.stringify(p));
   }catch(e){}
 }
@@ -219,6 +294,8 @@ function loadProgress(){
     let p=JSON.parse(raw);
     // Validate basic structure
     if(!p.selectedQ||!Array.isArray(p.selectedQ)||typeof p.currentIdx!=='number')return null;
+    // Restore userName if saved
+    if(p.userName) userName=p.userName;
     return p;
   }catch(e){return null;}
 }
@@ -240,29 +317,37 @@ function showResult(){
   let min=Math.floor(duration/60),sec=duration%60;
   let durStr=min>0?min+'分'+sec+'秒':sec+'秒';
 
-  let html='<div class="result-header"><h1>\u6570\u636e\u601d\u7ef4\u80fd\u529b\u6d4b\u8bd5\u62a5\u544a</h1>';
-  html+='<div class="total-score">'+pct+'<span style="font-size:24px">\u5206</span></div>';
-  html+='<div class="score-label">\u52a0\u6743\u603b\u5206 '+totalScoreR+' / '+totalMaxR+'\uff0c\u767e\u5206\u5236 '+pct+' \u5206 &nbsp;|&nbsp; \u7528\u65f6 '+durStr+'</div></div>';
+  let overallLv=getStarLevel(pct);
 
-  html+='<div class="result-card"><h2>\u80fd\u529b\u96f7\u8fbe\u56fe</h2><div class="radar-wrap"><canvas id="radarChart"></canvas></div></div>';
-  html+='<div class="result-card"><h2>\u5404\u7ef4\u5ea6\u8be6\u60c5</h2><div class="dim-list">';
+  function renderStars(count,total,size,starColor){size=size||'large';let c=starColor||'';return Array.from({length:total},(_,i)=>'<span class="star-'+size+(i<count?' filled':' empty')+'"'+(i<count&&c?' style="color:'+c+'"':'')+'>'+(i<count?'\u2605':'\u2606')+'</span>').join('');}
+
+  let html='<div class="result-header"><h1>\u6570\u636e\u601d\u7ef4\u80fd\u529b\u6d4b\u8bc4\u62a5\u544a</h1>';
+  if(userName){html+='<div class="user-name-label">'+userName+'</div>';}
+  html+='<div class="star-rating">'+renderStars(overallLv.stars,4,'large')+'</div>';
+  html+='<div class="level-desc">'+overallLv.desc+'</div>';
+  html+='<div class="score-label">\u7528\u65f6 '+durStr+'</div></div>';
+
+  html+='<div class="result-card"><h2>\u80fd\u529b\u6982\u89c8</h2><div class="dim-list">';
   for(let d=1;d<=4;d++){
     let s=dimScores[d],m=dimMaxes[d],p=m>0?Math.round(s/m*100):0;
-    let lv,lvCls;if(p>=80){lv='\u4f18\u79c0';lvCls='lv-a';}else if(p>=60){lv='\u826f\u597d';lvCls='lv-b';}else if(p>=40){lv='\u5f85\u63d0\u5347';lvCls='lv-c';}else{lv='\u8584\u5f31';lvCls='lv-d';}
-    html+='<div class="dim-item"><div class="dim-head"><span class="dim-name">'+DIM_NAMES[d]+'</span><span><span class="dim-score" style="color:'+DIM_COLORS[d]+'">'+p+'\u5206</span> <span class="dim-level '+lvCls+'">'+lv+'</span></span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:'+Math.min(p,100)+'%;background:'+DIM_COLORS[d]+'"></div></div><div class="dim-desc">'+getDimDesc(d,p)+'</div></div>';
+    let sl=getStarLevel(p);
+    html+='<div class="dim-item"><div class="dim-head"><span class="dim-name">'+DIM_NAMES[d]+'</span>';
+    html+='<span class="dim-stars">'+renderStars(sl.stars,4,'small',DIM_COLORS[d])+'</span>';
+    html+='<span class="dim-level '+sl.cls+'">'+sl.level+'</span></div>';
+    html+='<div class="dim-bar"><div class="dim-bar-fill" style="width:'+Math.min(p,100)+'%;background:'+DIM_COLORS[d]+'"></div></div>';
+    html+='<div class="dim-desc">'+getDimDesc(d,p)+'</div></div>';
   }
   html+='</div></div>';
 
   let weakDims=[];
   for(let d=1;d<=4;d++){let m=dimMaxes[d],p=m>0?Math.round(dimScores[d]/m*100):0;if(p<60)weakDims.push({dim:d,pct:p});}
   if(weakDims.length){
-    html+='<div class="weakness-card"><h2>\u26a0 \u8584\u5f31\u9879\u63d0\u793a\u4e0e\u6539\u8fdb\u5efa\u8bae</h2>';
+    html+='<div class="weakness-card"><h2>\u26a0 \u63d0\u5347\u5efa\u8bae</h2>';
     weakDims.sort((a,b)=>a.pct-b.pct);
-    weakDims.forEach(w=>{html+='<div class="weakness-item"><h3>'+DIM_NAMES[w.dim]+'\uff08'+w.pct+'\u5206\uff09</h3><p>'+getWeaknessAdvice(w.dim)+'</p></div>';});
+    weakDims.forEach(w=>{html+='<div class="weakness-item"><h3>'+DIM_NAMES[w.dim]+'</h3><p>'+getWeaknessAdvice(w.dim)+'</p></div>';});
     html+='</div>';
   }
 
-  // Action buttons
   html+='<div class="result-actions">';
   html+='<button class="btn btn-primary" onclick="downloadPdf()">\ud83d\udcc4 \u5bfc\u51fa PDF \u62a5\u544a</button>';
   html+='<button class="btn btn-restart" onclick="location.reload()">\u91cd\u65b0\u6d4b\u8bc4</button>';
@@ -271,32 +356,23 @@ function showResult(){
   document.getElementById('resultScreen').innerHTML=html;
 
   // Store result for PDF export
-  window._lastResult={pct,totalScore,totalMax,dimScores,dimMaxes,duration,dimState,startTime};
+  window._lastResult={pct,totalScore,totalMax,dimScores,dimMaxes,duration,dimState,startTime,userName};
 
   // Store result summary in localStorage for history
   saveResultSummary(pct,totalScore,totalMax,dimScores,dimMaxes,duration);
 
   // Upload to Google Sheets (fire-and-forget)
   uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration);
-
-  setTimeout(()=>{
-    let ctx=document.getElementById('radarChart');
-    if(ctx){
-      let radarData=DIM_NAMES.slice(1).map((_,i)=>dimMaxes[i+1]>0?Math.round(dimScores[i+1]/dimMaxes[i+1]*100):0);
-      let radarMax=Math.max(100,Math.ceil(Math.max(...radarData)/20)*20);
-      window._radarChart=new Chart(ctx,{type:'radar',data:{labels:DIM_NAMES.slice(1),datasets:[{label:'\u5f97\u5206',data:radarData,backgroundColor:'rgba(79,70,229,0.15)',borderColor:'#4f46e5',borderWidth:2,pointBackgroundColor:'#4f46e5',pointRadius:4},{label:'\u57fa\u51c6\u7ebf',data:[60,60,60,60],backgroundColor:'rgba(156,163,175,0.05)',borderColor:'#9ca3af',borderWidth:1,borderDash:[4,4],pointRadius:0}]},options:{responsive:true,scales:{r:{min:0,max:radarMax,ticks:{stepSize:20,font:{size:11}},pointLabels:{font:{size:13,weight:'600'}}}},plugins:{legend:{display:false}}}});}
-  },100);
 }
 
 function downloadPdf(){
   let r=window._lastResult;
   if(!r)return;
   let {pct,totalScore,totalMax,dimScores,dimMaxes,duration,dimState}=r;
-  let totalScoreR=totalScore%1===0?totalScore.toFixed(0):totalScore.toFixed(1);
-  let totalMaxR=totalMax%1===0?totalMax.toFixed(0):totalMax.toFixed(1);
   let min=Math.floor(duration/60),sec=duration%60;
   let durStr=min>0?min+'\u5206'+sec+'\u79d2':sec+'\u79d2';
   let ts=new Date().toLocaleString('zh-CN');
+  let overallLv=getStarLevel(pct);
 
   // Collect weakness dims
   let weakDims=[];
@@ -307,15 +383,15 @@ function downloadPdf(){
   let dimRows='';
   for(let d=1;d<=4;d++){
     let s=dimScores[d],m=dimMaxes[d],p=m>0?Math.round(s/m*100):0;
-    let lv;if(p>=80)lv='\u4f18\u79c0';else if(p>=60)lv='\u826f\u597d';else if(p>=40)lv='\u5f85\u63d0\u5347';else lv='\u8584\u5f31';
-    dimRows+='<tr><td style="color:'+DIM_COLORS[d]+';font-weight:700">'+DIM_NAMES[d]+'</td><td style="font-weight:700">'+p+'\u5206</td><td>'+lv+'</td><td style="font-size:12px;color:#666">'+getDimDesc(d,p)+'</td></tr>';
+    let sl=getStarLevel(p);
+    dimRows+='<tr><td style="color:'+DIM_COLORS[d]+';font-weight:700">'+DIM_NAMES[d]+'</td><td style="color:'+DIM_COLORS[d]+'">'+'\u2605'.repeat(sl.stars)+'\u2606'.repeat(4-sl.stars)+'</td><td>'+sl.level+'</td><td style="font-size:12px;color:#666">'+getDimDesc(d,p)+'</td></tr>';
   }
 
   // Build weakness rows
   let weakRows='';
   if(weakDims.length){
     weakDims.forEach(w=>{
-      weakRows+='<div class="weak-card"><h3>'+DIM_NAMES[w.dim]+' \uff08'+w.pct+'\u5206\uff09</h3><p>'+getWeaknessAdvice(w.dim)+'</p></div>';
+      weakRows+='<div class="weak-card"><h3>'+DIM_NAMES[w.dim]+'</h3><p>'+getWeaknessAdvice(w.dim)+'</p></div>';
     });
   }
 
@@ -323,33 +399,37 @@ function downloadPdf(){
   pw.document.write('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>DQT \u6d4b\u8bc4\u62a5\u544a</title>');
   pw.document.write('<style>');
   pw.document.write('*{margin:0;padding:0;box-sizing:border-box}');
-  pw.document.write('body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#1f2937;line-height:1.7;padding:0}');
+  pw.document.write('body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#3D4349;line-height:1.7;padding:0}');
   pw.document.write('.report{max-width:700px;margin:0 auto;padding:30px 40px}');
-  pw.document.write('.header{text-align:center;border-bottom:2px solid #4f46e5;padding-bottom:20px;margin-bottom:24px}');
-  pw.document.write('.header h1{font-size:24px;color:#4f46e5;margin-bottom:4px}');
-  pw.document.write('.header .score{font-size:48px;font-weight:800;color:#4f46e5;margin:8px 0}');
-  pw.document.write('.header .meta{font-size:13px;color:#6b7280}');
+  pw.document.write('.header{text-align:center;border-bottom:1px solid #8FA3B3;padding-bottom:20px;margin-bottom:24px}');
+  pw.document.write('.header h1{font-size:24px;color:#5A6B7A;margin-bottom:4px}');
+  pw.document.write('.header .stars{font-size:36px;margin:8px 0;letter-spacing:6px;color:#5A6B7A}');
+  pw.document.write('.header .badge{display:inline-block;font-size:16px;font-weight:700;padding:4px 18px;border-radius:20px;margin-top:4px;background:#eef2f5;color:#5A6B7A}');
+  pw.document.write('.header .meta{font-size:13px;color:#8FA3B3}');
   pw.document.write('.section{margin-bottom:24px}');
-  pw.document.write('.section h2{font-size:16px;font-weight:700;border-left:3px solid #4f46e5;padding-left:10px;margin-bottom:12px}');
+  pw.document.write('.section h2{font-size:16px;font-weight:700;border-left:3px solid #5A6B7A;padding-left:10px;margin-bottom:12px;color:#5A6B7A}');
   pw.document.write('table{width:100%;border-collapse:collapse;font-size:13px}');
-  pw.document.write('th,td{border:1px solid #e5e7eb;padding:10px 12px;text-align:left}');
-  pw.document.write('th{background:#f3f4f6;font-weight:600}');
-  pw.document.write('.weak-card{background:#fffbeb;border-left:3px solid #d97706;padding:12px 16px;margin-bottom:10px;border-radius:0 6px 6px 0}');
-  pw.document.write('.weak-card h3{font-size:14px;color:#92400e;margin-bottom:4px}');
-  pw.document.write('.weak-card p{font-size:13px;color:#78350f}');
+  pw.document.write('th,td{border:1px solid #8FA3B3;padding:10px 12px;text-align:left}');
+  pw.document.write('th{background:#eef2f5;font-weight:600;color:#5A6B7A}');
+  pw.document.write('.weak-card{background:#eef2f5;border-left:3px solid #5A6B7A;padding:12px 16px;margin-bottom:10px;border-radius:0 6px 6px 0}');
+  pw.document.write('.weak-card h3{font-size:14px;color:#3D4349;margin-bottom:4px}');
+  pw.document.write('.weak-card p{font-size:13px;color:#5A6B7A}');
   pw.document.write('.chart-wrap{max-width:360px;margin:0 auto 20px}');
-  pw.document.write('.footer{text-align:center;font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px;margin-top:20px}');
+  pw.document.write('.footer{text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px;margin-top:20px}');
   pw.document.write('@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.report{padding:0}}');
   pw.document.write('</style></head><body><div class="report">');
   
   // Header
   pw.document.write('<div class="header"><h1>\u6570\u636e\u601d\u7ef4\u80fd\u529b\u6d4b\u8bc4\u62a5\u544a</h1>');
-  pw.document.write('<div class="score">'+pct+'<span style="font-size:20px"> \u5206</span></div>');
-  pw.document.write('<div class="meta">\u52a0\u6743\u603b\u5206 '+totalScoreR+' / '+totalMaxR+' \uff5c \u7528\u65f6 '+durStr+' \uff5c '+ts+'</div></div>');
+  if(userName){pw.document.write('<div style="font-size:16px;color:#3D4349;margin-bottom:4px">'+userName+'</div>');}
+  pw.document.write('<div class="stars">'+'\u2605'.repeat(overallLv.stars)+'\u2606'.repeat(4-overallLv.stars)+'</div>');
+  pw.document.write('<div class="badge">'+overallLv.level+'</div>');
+  pw.document.write('<div style="font-size:14px;color:#5A6B7A;margin-top:6px">'+overallLv.desc+'</div>');
+  pw.document.write('<div class="meta">\u7528\u65f6 '+durStr+' \uff5c '+ts+'</div></div>');
   
   // Dimension table
-  pw.document.write('<div class="section"><h2>\u5404\u7ef4\u5ea6\u8be6\u60c5</h2>');
-  pw.document.write('<table><tr><th>\u7ef4\u5ea6</th><th>\u5f97\u5206</th><th>\u7b49\u7ea7</th><th>\u8bf4\u660e</th></tr>');
+  pw.document.write('<div class="section"><h2>\u80fd\u529b\u6982\u89c8</h2>');
+  pw.document.write('<table><tr><th>\u7ef4\u5ea6</th><th>\u7b49\u7ea7</th><th>\u8bc4\u4ef7</th><th>\u8bf4\u660e</th></tr>');
   pw.document.write(dimRows);
   pw.document.write('</table></div>');
   
@@ -414,6 +494,7 @@ function saveResultSummary(pct,totalScore,totalMax,dimScores,dimMaxes,duration){
   try{
     let history=JSON.parse(localStorage.getItem('dqt_history')||'[]');
     history.push({
+      userName,
       timestamp:new Date().toISOString(),
       percentage:pct,score:totalScore,max:totalMax,
       dim1:dimMaxes[1]>0?Math.round(dimScores[1]/dimMaxes[1]*100):0,
@@ -462,7 +543,7 @@ function uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration){
     let ts=new Date().toLocaleString('zh-CN',{hour12:false});
 
     let payload={
-      testId, timestamp:ts, totalScore, totalMax,
+      userName, testId, timestamp:ts, totalScore, totalMax,
       percentage:pct, durationSeconds:duration,
       dimensions:dimPcts, answers
     };
@@ -474,6 +555,13 @@ function uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration){
       body:JSON.stringify(payload)
     });
   }catch(e){}
+}
+
+function getStarLevel(pct){
+  if(pct>=80)return{stars:4,level:'\u4f18\u79c0',desc:'\u6570\u636e\u601d\u7ef4\u7a81\u51fa\uff0c\u80fd\u5728\u4fe1\u606f\u4e0d\u5b8c\u5584\u65f6\u505a\u51fa\u6821\u51c6\u51b3\u7b56',cls:'lv-a'};
+  if(pct>=60)return{stars:3,level:'\u826f\u597d',desc:'\u5177\u5907\u826f\u597d\u7684\u6570\u636e\u5206\u6790\u601d\u7ef4\uff0c\u80fd\u5904\u7406\u591a\u53d8\u91cf\u95ee\u9898',cls:'lv-b'};
+  if(pct>=40)return{stars:2,level:'\u5f85\u63d0\u5347',desc:'\u6709\u57fa\u672c\u7684\u6570\u636e\u8bc6\u522b\u80fd\u529b\uff0c\u4f46\u590d\u6742\u63a8\u7406\u4ecd\u9700\u52a0\u5f3a',cls:'lv-c'};
+  return{stars:1,level:'\u8584\u5f31',desc:'\u57fa\u7840\u6570\u636e\u610f\u8bc6\u6709\u5f85\u5efa\u7acb\uff0c\u65e5\u5e38\u6570\u636e\u5f02\u5e38\u4e0d\u6613\u5bdf\u89c9',cls:'lv-d'};
 }
 
 function getDimDesc(dim,pct){
