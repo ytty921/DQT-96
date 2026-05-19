@@ -265,8 +265,9 @@ function submitAnswer(){
   }
   dimState[d].totalPts+=score;
 
-  // 自适应难度: 得分>0 → 升难度; 得分=0 → 降难度
-  if(score>0){dimDifficulty[d]=Math.min(dimDifficulty[d]+1,3);}
+  // 自适应难度: 只有完全答对才升难度; 部分分/未答对 → 降难度
+  var maxScore=q.type==='multiple'||q.type==='rank'?2*diffCoeff(q.diff):diffCoeff(q.diff);
+  if(score>=maxScore){dimDifficulty[d]=Math.min(dimDifficulty[d]+1,3);}
   else{dimDifficulty[d]=Math.max(dimDifficulty[d]-1,1);}
 
   userAnswers[currentIdx]={answer:ua,score:score};
@@ -320,14 +321,14 @@ function clearProgress(){
 // 满分等级 + 二维评级矩阵（SKILL 第六章）
 // ==========================================
 
-function maxPtsTier(totalMaxPts){
-  if(totalMaxPts>=75) return {tier:3, label:'高难度组', desc:'系统持续出困难题，挑战度高'};
-  if(totalMaxPts>=55) return {tier:2, label:'中难度组', desc:'中等难度为主'};
-  return {tier:1, label:'低难度组', desc:'以简单题为主'};
+function avgDiffTier(avgDiff){
+  if(avgDiff>=2.5) return {tier:3, label:'高难度组', desc:'答对题以困难题为主，挑战能力强'};
+  if(avgDiff>=1.5) return {tier:2, label:'中难度组', desc:'答对题以中等难度为主'};
+  return {tier:1, label:'低难度组', desc:'答对题以简单题为主'};
 }
 
-function getRating2D(pct,totalMaxPts){
-  var t=maxPtsTier(totalMaxPts);
+function getRating2D(pct,avgDiff){
+  var t=avgDiffTier(avgDiff);
   // 百分比等级
   var pctLevel=pct>=80?'优秀':pct>=60?'良好':pct>=40?'待提升':'薄弱';
   // 二维矩阵: [百分比等级][满分等级]
@@ -354,7 +355,7 @@ function getRating2D(pct,totalMaxPts){
 
 // 保留旧接口兼容
 function getStarLevel(pct){
-  var r=getRating2D(pct,55); // 默认中难度，仅用于非结果页的兼容调用
+  var r=getRating2D(pct,2.0); // 默认中难度，仅用于非结果页的兼容调用
   return r;
 }
 
@@ -380,8 +381,18 @@ function showResult(){
   var min=Math.floor(duration/60),sec=duration%60;
   var durStr=min>0?min+'分'+sec+'秒':sec+'秒';
 
-  // 二维评级
-  var rating=getRating2D(pct,totalMax);
+  // 计算答对题的平均难度（用于难度组判定）
+  var correctDiffs=[];
+  for(var i=0;i<selectedQ.length;i++){
+    if(!userAnswers[i])continue;
+    var q=selectedQ[i],ua=userAnswers[i];
+    var maxS=q.type==='multiple'||q.type==='rank'?2*diffCoeff(q.diff):diffCoeff(q.diff);
+    if(ua.score>=maxS)correctDiffs.push(q.diff);
+  }
+  var avgDiff=correctDiffs.length>0?correctDiffs.reduce(function(a,b){return a+b;},0)/correctDiffs.length:1;
+
+  // 二维评级（基于答对题平均难度）
+  var rating=getRating2D(pct,avgDiff);
 
   var html='<div class="result-header"><h1>数据思维能力测评报告</h1>';
   if(userName){html+='<div class="user-name-label">'+userName+'</div>';}

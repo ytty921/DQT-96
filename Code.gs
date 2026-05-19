@@ -80,19 +80,23 @@ function writeAnswers(data) {
   let sheet2 = ss.getSheetByName('答题明细');
   if (!sheet2) {
     sheet2 = ss.insertSheet('答题明细');
-    sheet2.getRange(1, 1, 1, 5).setValues([[
-      'testId', '用户名', '题号', '用户答案', '得分'
+    sheet2.getRange(1, 1, 1, 9).setValues([[
+      'testId', '用户名', '题号', '题目ID', '题目内容', '用户答案', '正确答案', '正确/错误', '得分'
     ]]);
-    sheet2.getRange(1, 1, 1, 5).setFontWeight('bold');
+    sheet2.getRange(1, 1, 1, 9).setFontWeight('bold');
   }
   
   const rows = data.answers.map((a, i) => [
     data.testId,
     data.userName || '',
-    i + 1,
-    JSON.stringify(a.answer),
+    a.order || (i + 1),
+    a.qid || '',
+    a.question || '',
+    a.userAnswer || '',
+    a.correctAnswer || '',
+    a.correct ? '正确' : '错误',
     a.score || 0
   ]);
   
-  sheet2.getRange(sheet2.getLastRow() + 1, 1, rows.length, 5).setValues(rows);
+  sheet2.getRange(sheet2.getLastRow() + 1, 1, rows.length, 9).setValues(rows);
 }
