@@ -10,6 +10,7 @@ let userName='';
 let questionsReady=allQ.length>0;
 const SHEET_URL='https://script.google.com/macros/s/AKfycby-GeY8kzZPaj6YtBTVvY3F5SGfIwozm71_oZR0N6H3CQpmPMJLwAKMKUDgSNhVe7RGhA/exec';
 let dimState={1:{answered:0,totalPts:0,maxPts:0},2:{answered:0,totalPts:0,maxPts:0},3:{answered:0,totalPts:0,maxPts:0},4:{answered:0,totalPts:0,maxPts:0}};
+let dimDifficulty={1:2,2:2,3:2,4:2}; // 各维度当前自适应难度 (1=简单 2=中等 3=困难)
 
 // 启用开始按钮
 (function(){
@@ -70,6 +71,7 @@ function startQuiz(){
   startTime=Date.now();
   testId=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
   dimState={1:{answered:0,totalPts:0,maxPts:0},2:{answered:0,totalPts:0,maxPts:0},3:{answered:0,totalPts:0,maxPts:0},4:{answered:0,totalPts:0,maxPts:0}};
+  dimDifficulty={1:2,2:2,3:2,4:2};
   for(let d=1;d<=4;d++){
     let pool=allQ.filter(q=>q.dim===d&&q.diff===2);
     if(!pool.length) pool=allQ.filter(q=>q.dim===d);
@@ -99,9 +101,7 @@ function pickNext(){
     targetDim=[1,2,3,4].sort((a,b)=>{let ra=dimState[a].maxPts>0?dimState[a].totalPts/dimState[a].maxPts:1;let rb=dimState[b].maxPts>0?dimState[b].totalPts/dimState[b].maxPts:1;return ra-rb;})[0];
   }
   let st=dimState[targetDim];
-  let targetDiff;
-  if(st.answered===0)targetDiff=2;
-  else{let ratio=st.maxPts>0?st.totalPts/st.maxPts:0;if(ratio>=0.7)targetDiff=3;else if(ratio>=0.4)targetDiff=2;else targetDiff=1;}
+  let targetDiff=dimDifficulty[targetDim];
   let usedIds=new Set(selectedQ.map(q=>q.id));
   let pool=allQ.filter(q=>q.dim===targetDim&&q.diff===targetDiff&&!usedIds.has(q.id));
   if(!pool.length)pool=allQ.filter(q=>q.dim===targetDim&&!usedIds.has(q.id));
@@ -265,6 +265,10 @@ function submitAnswer(){
   }
   dimState[d].totalPts+=score;
 
+  // 自适应难度: 得分>0 → 升难度; 得分=0 → 降难度
+  if(score>0){dimDifficulty[d]=Math.min(dimDifficulty[d]+1,3);}
+  else{dimDifficulty[d]=Math.max(dimDifficulty[d]-1,1);}
+
   userAnswers[currentIdx]={answer:ua,score:score};
 
   currentIdx++;
@@ -290,7 +294,7 @@ function goPrev(){
 // === Persistence ===
 function saveProgress(){
   try{
-    let p={selectedQ,currentIdx,userAnswers,dimState,startTime,testId,userName,savedAt:new Date().toISOString()};
+    let p={selectedQ,currentIdx,userAnswers,dimState,dimDifficulty,startTime,testId,userName,savedAt:new Date().toISOString()};
     localStorage.setItem('dqt_progress',JSON.stringify(p));
   }catch(e){}
 }
@@ -302,6 +306,8 @@ function loadProgress(){
     let p=JSON.parse(raw);
     if(!p.selectedQ||!Array.isArray(p.selectedQ)||typeof p.currentIdx!=='number')return null;
     if(p.userName) userName=p.userName;
+    if(p.dimDifficulty) dimDifficulty=p.dimDifficulty;
+    else dimDifficulty={1:2,2:2,3:2,4:2};
     return p;
   }catch(e){return null;}
 }
@@ -583,12 +589,9 @@ function uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration,ratin
       if(!ua)continue;
       var correctAns=q.ans;
       var userAns=ua.answer;
-      var isCorrect=false;
-      if(Array.isArray(correctAns)&&Array.isArray(userAns)){
-        isCorrect=correctAns.length===userAns.length&&correctAns.every(function(v){return userAns.includes(v);});
-      }else if(!Array.isArray(correctAns)&&!Array.isArray(userAns)){
-        isCorrect=correctAns===userAns;
-      }
+      // 严格判分: 得分<满分 → 错误 (部分分不计入正确)
+      var maxScore=q.type==='multiple'||q.type==='rank'?2*diffCoeff(q.diff):diffCoeff(q.diff);
+      var isCorrect=ua.score>=maxScore;
       answers.push({
         order:i+1, qid:q.id, dim:q.dim,
         question:q.q,
