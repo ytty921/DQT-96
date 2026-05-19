@@ -8,7 +8,7 @@ let userAnswers=[]; // {answer, score} per index
 let startTime=0,testId='';
 let userName='';
 let questionsReady=allQ.length>0;
-const SHEET_URL='https://script.google.com/macros/s/AKfycbzNYj1qAM4_QFDuzGVz-MijZU_Ae6Dw0YWBR-ffSO4WxoEvS20dn7mj8W2FX-CwV7pJDg/exec';
+const SHEET_URL='https://script.google.com/macros/s/AKfycby-GeY8kzZPaj6YtBTVvY3F5SGfIwozm71_oZR0N6H3CQpmPMJLwAKMKUDgSNhVe7RGhA/exec';
 let dimState={1:{answered:0,totalPts:0,maxPts:0},2:{answered:0,totalPts:0,maxPts:0},3:{answered:0,totalPts:0,maxPts:0},4:{answered:0,totalPts:0,maxPts:0}};
 
 // 启用开始按钮
