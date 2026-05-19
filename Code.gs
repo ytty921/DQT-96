@@ -23,6 +23,7 @@ function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const debug = [];
     
     // 确保表头
     ensureHeaders(sheet);
@@ -41,16 +42,27 @@ function doPost(e) {
       (dims['量化抽象力'] && dims['量化抽象力'].percentage) || 0,
       (dims['逻辑推演力'] && dims['逻辑推演力'].percentage) || 0,
       (dims['决策校准力'] && dims['决策校准力'].percentage) || 0,
-      data.tierLabel || '',    // ★ 满分等级
-      data.ratingLevel || '',  // ★ 二维评级
+      data.tierLabel || '',
+      data.ratingLevel || '',
     ]);
     
-    // 可选：写入详细答题记录到 Sheet2
-    if (data.answers && data.answers.length > 0) {
-      writeAnswers(data);
+    // 写入详细答题记录
+    const hasAnswers = data.answers && data.answers.length > 0;
+    debug.push('answersCount: ' + (data.answers ? data.answers.length : 'null'));
+    
+    if (hasAnswers) {
+      debug.push('firstAnswerKeys: ' + Object.keys(data.answers[0]).join(','));
+      try {
+        writeAnswers(data);
+        debug.push('writeAnswers: ok, rows=' + data.answers.length);
+      } catch (e2) {
+        debug.push('writeAnswers error: ' + e2.toString());
+      }
+    } else {
+      debug.push('writeAnswers: skipped (no answers data)');
     }
     
-    return ContentService.createTextOutput(JSON.stringify({ status: 'ok' }))
+    return ContentService.createTextOutput(JSON.stringify({ status: 'ok', debug: debug }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (e) {
     return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: e.toString() }))
@@ -78,6 +90,14 @@ function ensureHeaders(sheet) {
 function writeAnswers(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet2 = ss.getSheetByName('答题明细');
+  // 如果旧表存在且表头列数不对，删除重建
+  if (sheet2) {
+    const header = sheet2.getRange(1, 1, 1, sheet2.getLastColumn()).getValues()[0];
+    if (!header || header.length < 9 || header[3] !== '题目ID') {
+      ss.deleteSheet(sheet2);
+      sheet2 = null;
+    }
+  }
   if (!sheet2) {
     sheet2 = ss.insertSheet('答题明细');
     sheet2.getRange(1, 1, 1, 9).setValues([[
