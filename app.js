@@ -609,12 +609,8 @@ function uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration,ratin
       ratingLevel: rating?rating.level:''
     };
 
-    fetch(SHEET_URL,{
-      method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify(payload)
-    });
+    // sendBeacon 不受 CORS 限制，比 fetch no-cors 更可靠
+    navigator.sendBeacon(SHEET_URL, JSON.stringify(payload));
   }catch(e){}
 }
 
