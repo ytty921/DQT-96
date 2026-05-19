@@ -581,7 +581,7 @@ function uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration,ratin
     for(var i=0;i<selectedQ.length;i++){
       var q=selectedQ[i],ua=userAnswers[i];
       if(!ua)continue;
-      var correctAns=Array.isArray(q.ans)?q.ans:[q.ans];
+      var correctAns=q.ans;
       var userAns=ua.answer;
       var isCorrect=false;
       if(Array.isArray(correctAns)&&Array.isArray(userAns)){
