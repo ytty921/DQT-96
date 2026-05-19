@@ -58,7 +58,22 @@
 <!-- 结果页 -->
 <div id="resultScreen" class="result-screen hidden"></div>
 
-<script src="questions.js"></script>
-<script src="app.js"></script>
+<script src="questions.js?v=20260519"></script>
+<script src="app.js?v=20260519"></script>
+<script>
+// 兜底检测：如果 app.js 没正确启用按钮，3秒后自行检测
+setTimeout(function(){
+  var btn = document.querySelector('#startScreen .btn-primary');
+  if (btn && btn.disabled) {
+    if (typeof _ALL_QUESTIONS === 'undefined') {
+      btn.textContent = '题库加载失败，请刷新页面';
+      btn.style.background = '#c0392b';
+    } else if (!_ALL_QUESTIONS || !_ALL_QUESTIONS.length) {
+      btn.textContent = '题库为空，请刷新页面';
+      btn.style.background = '#c0392b';
+    }
+  }
+}, 3000);
+</script>
 </body>
 </html>
