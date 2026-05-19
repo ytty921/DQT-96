@@ -322,8 +322,8 @@ function clearProgress(){
 // ==========================================
 
 function avgDiffTier(avgDiff){
-  if(avgDiff>=2.5) return {tier:3, label:'高难度组', desc:'答对题以困难题为主，挑战能力强'};
-  if(avgDiff>=1.5) return {tier:2, label:'中难度组', desc:'答对题以中等难度为主'};
+  if(avgDiff>=2.0) return {tier:3, label:'高难度组', desc:'答对题以困难题为主，挑战能力强'};
+  if(avgDiff>=1.3) return {tier:2, label:'中难度组', desc:'答对题以中等难度为主'};
   return {tier:1, label:'低难度组', desc:'答对题以简单题为主'};
 }
 
