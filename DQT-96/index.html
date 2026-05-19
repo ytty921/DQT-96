@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据思维能力测试</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 开始页 -->
+<div id="startScreen" class="start-screen">
+<div class="start-card">
+  <h1>数据思维能力测试</h1>
+  <div class="subtitle">DQT — Data Quality Thinking Assessment</div>
+  <dl class="start-info">
+    <dt>测评维度</dt>
+    <dd><div class="dim-tags">
+      <span class="dim-tag dt1">数据敏感性</span>
+      <span class="dim-tag dt2">量化抽象力</span>
+      <span class="dim-tag dt3">逻辑推演力</span>
+      <span class="dim-tag dt4">决策校准力</span>
+    </div></dd>
+    <dt>题型</dt><dd>单选题 · 多选题 · 判断题</dd>
+    <dt>出题方式</dt><dd>自适应——根据作答表现动态调整难度与维度侧重</dd>
+    <dt>建议用时</dt><dd>约30分钟</dd>
+  </dl>
+  <button class="btn btn-primary" onclick="showNameScreen()" disabled>题库加载中…</button>
+</div>
+</div>
+
+<!-- 姓名输入页 -->
+<div id="nameScreen" class="name-screen hidden">
+<div class="start-card">
+  <h1>数据思维能力测试</h1>
+  <div class="subtitle">请输入您的姓名后开始测评</div>
+  <div class="name-input-wrap">
+    <input type="text" id="nameInput" class="name-input" placeholder="请输入您的姓名" autocomplete="name" oninput="onNameInput()">
+  </div>
+  <button class="btn btn-primary" onclick="confirmName()" id="nameBtn" disabled>开始测评</button>
+</div>
+</div>
+
+<!-- 答题页 -->
+<div id="quizScreen" class="quiz-screen hidden">
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  <div class="progress-meta">
+    <span id="progressText"></span>
+    <span id="dimIndicator"></span>
+  </div>
+  <div class="q-card" id="questionCard"></div>
+  <div class="submit-wrap">
+    <button class="btn btn-prev" id="prevBtn" onclick="goPrev()" disabled>上一题</button>
+    <button class="btn btn-primary" id="submitBtn" onclick="submitAnswer()" disabled>下一题</button>
+  </div>
+</div>
+
+<!-- 结果页 -->
+<div id="resultScreen" class="result-screen hidden"></div>
+
+<script src="questions.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

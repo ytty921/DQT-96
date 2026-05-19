@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>DQT 测评报告 — Lorna</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#F0F4F7;color:#3D566E;line-height:1.7;padding:40px 24px}
+.result-screen{max-width:800px;margin:0 auto 48px}
+.result-header{background:#5A7F99;color:#fff;border-radius:16px;padding:32px 36px;margin-bottom:24px;text-align:center}
+.result-header h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.star-rating{display:flex;justify-content:center;gap:6px;margin:12px 0 8px}
+.star-large{font-size:36px;line-height:1}
+.star-large.filled{color:rgba(255,255,255,.9)}
+.star-large.empty{font-size:36px;color:rgba(255,255,255,.25);line-height:1}
+.level-badge{display:inline-block;font-size:15px;font-weight:700;padding:4px 20px;border-radius:20px;margin:4px 0 8px;background:rgba(255,255,255,.15);color:#fff}
+.level-desc{font-size:13px;opacity:.85;margin-bottom:8px;line-height:1.6;max-width:420px;margin:0 auto}
+.score-label{font-size:13px;opacity:.55}
+.user-name-label{font-size:16px;color:rgba(255,255,255,.85);font-weight:600;margin-bottom:4px}
+.result-card{background:#fff;border:1px solid #dce5ed;border-radius:12px;padding:24px 28px;margin-bottom:16px}
+.result-card h2{font-size:17px;font-weight:600;margin:0 0 16px;text-align:left;color:#5A7F99}
+.dim-list{display:flex;flex-direction:column;gap:14px}
+.dim-item{padding:16px 20px;border-radius:10px;border:1px solid #dce5ed;background:#fff}
+.dim-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.dim-name{font-weight:600;font-size:15px;color:#3D566E}
+.dim-stars{display:flex;align-items:center;gap:2px}
+.star-small{font-size:15px;line-height:1}
+.star-small.empty{font-size:15px;color:#c5d2dd;line-height:1}
+.dim-level{font-size:12px;font-weight:600;padding:2px 10px;border-radius:12px;margin-left:8px}
+.lv-a{background:#dcfce7;color:#166534}
+.lv-b{background:#dbeafe;color:#1e40af}
+.lv-c{background:#fef9c3;color:#854d0e}
+.lv-d{background:#fee2e2;color:#991b1b}
+.dim-bar{height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;margin-bottom:8px}
+.dim-bar-fill{height:100%;border-radius:3px}
+.dim-desc{font-size:13px;color:#6b7280;line-height:1.7}
+.dim-score{font-size:14px;font-weight:700}
+.weakness-card{background:#fff;border:1px solid #dce5ed;border-radius:12px;padding:24px 28px;margin-bottom:16px}
+.weakness-card h2{font-size:17px;font-weight:600;margin:0 0 16px;text-align:left;color:#5A7F99}
+.weakness-item{padding:14px 18px;border-left:3px solid #f97316;background:#fff7ed;border-radius:0 8px 8px 0;margin-bottom:12px}
+.weakness-item:last-child{margin-bottom:0}
+.weakness-item h3{font-size:14px;font-weight:600;color:#3D566E;margin-bottom:4px}
+.weakness-item p{font-size:13px;color:#6b7280;line-height:1.7}
+.radar-section{background:#fff;border:1px solid #dce5ed;border-radius:12px;padding:24px 28px;margin-bottom:16px}
+.radar-section h2{font-size:17px;font-weight:600;margin:0 0 16px;text-align:left;color:#5A7F99}
+.radar-wrap{display:flex;justify-content:center;padding:8px 0}
+.legend{display:flex;justify-content:center;gap:24px;margin-top:12px;font-size:12px;color:#6b7280}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.footer-note{text-align:center;color:#9ca3af;font-size:11px;margin-top:16px;padding-bottom:24px}
+</style>
+</head>
+<body>
+
+<div class="result-screen">
+
+<!-- ========== 头部 ========== -->
+<div class="result-header">
+  <h1>数据思维能力测评报告</h1>
+  <div class="user-name-label">Lorna</div>
+  <div class="star-rating">
+    <span class="star-large filled">★</span>
+    <span class="star-large filled">★</span>
+    <span class="star-large filled">★</span>
+    <span class="star-large empty">☆</span>
+    <span class="star-large empty">☆</span>
+  </div>
+  <div class="level-badge">良好</div>
+  <div class="level-desc">具备较好的数据思维能力，能在多数场景下用数据辅助判断。决策校准力是突出长板，数据敏感性是主要短板。</div>
+  <div class="score-label">总分 59 / 满分 81.5 · 百分比 72% · 用时 14分40秒</div>
+</div>
+
+<!-- ========== 能力概览 ========== -->
+<div class="result-card">
+  <h2>能力概览</h2>
+  <div class="dim-list">
+
+    <!-- 数据敏感性 53% 待提升 -->
+    <div class="dim-item">
+      <div class="dim-head">
+        <span class="dim-name">数据敏感性</span>
+        <div style="display:flex;align-items:center">
+          <span class="dim-stars">
+            <span class="star-small" style="color:#3b82f6">★</span>
+            <span class="star-small" style="color:#3b82f6">★</span>
+            <span class="star-small empty">☆</span>
+            <span class="star-small empty">☆</span>
+            <span class="star-small empty">☆</span>
+          </span>
+          <span class="dim-score" style="color:#3b82f6;margin-left:6px">53%</span>
+          <span class="dim-level lv-c">待提升</span>
+        </div>
+      </div>
+      <div class="dim-bar"><div class="dim-bar-fill" style="width:53%;background:#3b82f6"></div></div>
+      <div class="dim-desc">能注意到比较明显的数据异常信号，但对统计口径差异、数据来源偏差、隐性因素干扰的警觉还不够。容易被表面合理的数字说服，「看到数字后追问来源」的思维习惯尚未完全建立。</div>
+    </div>
+
+    <!-- 量化抽象力 80% 优秀 -->
+    <div class="dim-item">
+      <div class="dim-head">
+        <span class="dim-name">量化抽象力</span>
+        <div style="display:flex;align-items:center">
+          <span class="dim-stars">
+            <span class="star-small" style="color:#7c3aed">★</span>
+            <span class="star-small" style="color:#7c3aed">★</span>
+            <span class="star-small" style="color:#7c3aed">★</span>
+            <span class="star-small" style="color:#7c3aed">★</span>
+            <span class="star-small empty">☆</span>
+          </span>
+          <span class="dim-score" style="color:#7c3aed;margin-left:6px">80%</span>
+          <span class="dim-level lv-a">优秀</span>
+        </div>
+      </div>
+      <div class="dim-bar"><div class="dim-bar-fill" style="width:80%;background:#7c3aed"></div></div>
+      <div class="dim-desc">善于将模糊概念转化为可量化指标，能用数据刻画抽象问题。在信息不完整时能通过拆解要素、参考基准、设定多档假设来建立合理的估算框架，指标选取的合理性较好。</div>
+    </div>
+
+    <!-- 逻辑推演力 64% 良好 -->
+    <div class="dim-item">
+      <div class="dim-head">
+        <span class="dim-name">逻辑推演力</span>
+        <div style="display:flex;align-items:center">
+          <span class="dim-stars">
+            <span class="star-small" style="color:#ec4899">★</span>
+            <span class="star-small" style="color:#ec4899">★</span>
+            <span class="star-small" style="color:#ec4899">★</span>
+            <span class="star-small empty">☆</span>
+            <span class="star-small empty">☆</span>
+          </span>
+          <span class="dim-score" style="color:#ec4899;margin-left:6px">64%</span>
+          <span class="dim-level lv-b">良好</span>
+        </div>
+      </div>
+      <div class="dim-bar"><div class="dim-bar-fill" style="width:64%;background:#ec4899"></div></div>
+      <div class="dim-desc">能识别常见的「相关≠因果」陷阱，对混淆变量有基本警惕。在单因素因果场景下推理稳健，但面对多因素交织的复杂问题时，替代解释的排查深度和系统性还有提升空间。</div>
+    </div>
+
+    <!-- 决策校准力 91% 优秀 -->
+    <div class="dim-item">
+      <div class="dim-head">
+        <span class="dim-name">决策校准力</span>
+        <div style="display:flex;align-items:center">
+          <span class="dim-stars">
+            <span class="star-small" style="color:#f97316">★</span>
+            <span class="star-small" style="color:#f97316">★</span>
+            <span class="star-small" style="color:#f97316">★</span>
+            <span class="star-small" style="color:#f97316">★</span>
+            <span class="star-small" style="color:#f97316">★</span>
+          </span>
+          <span class="dim-score" style="color:#f97316;margin-left:6px">91%</span>
+          <span class="dim-level lv-a">优秀</span>
+        </div>
+      </div>
+      <div class="dim-bar"><div class="dim-bar-fill" style="width:91%;background:#f97316"></div></div>
+      <div class="dim-desc">在信息不完备的情况下能做出理性的阶段性判断，善于区分可逆与不可逆决策，具备区分「决策过程」与「决策结果」的元认知能力。对沉没成本、锚定效应等认知偏差有较强免疫，是四个维度中最突出的长板。</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ========== 薄弱项提示 ========== -->
+<div class="weakness-card">
+  <h2>⚠️ 薄弱项提示</h2>
+  <div class="weakness-item">
+    <h3>数据敏感性 · 53%（低于 60% 阈值）</h3>
+    <p>这是四个维度中唯一低于60%的维度，也是与「优秀」等级之间最显著的差距。核心问题不是发现不了问题，而是习惯于相信数字的表面含义，较少主动追问「这数据怎么来的」「统计口径是什么」「有没有遗漏的隐性因素」。</p>
+    <p style="margin-top:8px"><strong>建议：</strong>养成「看到数字问三问」的习惯——谁统计的？用什么口径？有没有可能漏了什么？可从对比两个App的同一项数据（如银行账单vs记账软件）开始练习，一个月内有望提升至60–70%区间。</p>
+  </div>
+</div>
+
+<!-- ========== 雷达图 ========== -->
+<div class="radar-section">
+  <h2>四维雷达图</h2>
+  <div class="radar-wrap">
+    <canvas id="radar" width="360" height="340"></canvas>
+  </div>
+  <div class="legend">
+    <span><span class="legend-dot" style="background:#5A7F99"></span> Lorna 得分</span>
+    <span><span class="legend-dot" style="background:#dce5ed;border:1.5px dashed #9ca3af"></span> 60% 基准线</span>
+    <span style="display:flex;align-items:center;gap:8px">
+      <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:#3b82f6;display:inline-block"></span>数据敏感性</span>
+      <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:#7c3aed;display:inline-block"></span>量化抽象力</span>
+      <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:#ec4899;display:inline-block"></span>逻辑推演力</span>
+      <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:#f97316;display:inline-block"></span>决策校准力</span>
+    </span>
+  </div>
+</div>
+
+<div class="footer-note">DQT-96 数据思维能力测评 · 生成于 2026-05-18</div>
+
+</div>
+
+<script>
+(function(){
+  var canvas = document.getElementById('radar');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var cx = W / 2, cy = H / 2 + 4;
+  var r = 110;
+
+  // 维度标签（上、右、下、左）
+  var labels = ['数据敏感性\n53%', '量化抽象力\n80%', '逻辑推演力\n64%', '决策校准力\n91%'];
+  var scores = [0.53, 0.80, 0.64, 0.91];
+  var colors = ['#3b82f6', '#7c3aed', '#ec4899', '#f97316'];
+  var baseline = 0.60;
+
+  // 角度：从顶部顺时针（数据敏感性=上, 量化抽象力=右, 逻辑推演力=下, 决策校准力=左）
+  var angles = [-Math.PI/2, 0, Math.PI/2, Math.PI];
+
+  // 绘制基准六边形背景（60%基线）
+  ctx.save();
+  ctx.strokeStyle = '#9ca3af';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6, 4]);
+  ctx.fillStyle = 'rgba(220,229,237,0.4)';
+  ctx.beginPath();
+  for (var i = 0; i < 4; i++) {
+    var a = angles[i];
+    var x = cx + r * baseline * Math.cos(a);
+    var y = cy + r * baseline * Math.sin(a);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // 径向网格线（25%, 50%, 75%, 100%）
+  var levels = [0.25, 0.50, 0.75, 1.00];
+  ctx.save();
+  ctx.fillStyle = '#9ca3af';
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  for (var li = 0; li < levels.length; li++) {
+    var lv = levels[li];
+    ctx.strokeStyle = li === 3 ? '#d1d5db' : '#e5e7eb';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    for (var i = 0; i < 4; i++) {
+      var a = angles[i];
+      var x = cx + r * lv * Math.cos(a);
+      var y = cy + r * lv * Math.sin(a);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    // 只在左侧标注
+    var ly = cy - r * lv;
+    ctx.fillText(Math.round(lv * 100) + '%', cx - 4, ly + 3);
+  }
+  ctx.restore();
+
+  // 轴线
+  ctx.save();
+  ctx.strokeStyle = '#d1d5db';
+  ctx.lineWidth = 0.5;
+  for (var i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + r * Math.cos(angles[i]), cy + r * Math.sin(angles[i]));
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 绘制得分数据区
+  ctx.save();
+  ctx.fillStyle = 'rgba(90,127,153,0.15)';
+  ctx.strokeStyle = '#5A7F99';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (var i = 0; i < 4; i++) {
+    var a = angles[i];
+    var x = cx + r * scores[i] * Math.cos(a);
+    var y = cy + r * scores[i] * Math.sin(a);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  // 数据点
+  for (var i = 0; i < 4; i++) {
+    var a = angles[i];
+    var x = cx + r * scores[i] * Math.cos(a);
+    var y = cy + r * scores[i] * Math.sin(a);
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // 标签（带背景的百分比放在点旁边）
+  ctx.save();
+  ctx.font = 'bold 13px -apple-system, "PingFang SC", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  for (var i = 0; i < 4; i++) {
+    var a = angles[i];
+    var x = cx + r * scores[i] * Math.cos(a);
+    var y = cy + r * scores[i] * Math.sin(a);
+    // 偏移
+    var dx = Math.cos(a) * 22;
+    var dy = Math.sin(a) * 22;
+    if (i === 0) { dx = 0; dy = -28; ctx.textAlign = 'center'; }          // 上
+    else if (i === 1) { dx = 24; dy = -4; ctx.textAlign = 'left'; }       // 右
+    else if (i === 2) { dx = 0; dy = 20; ctx.textAlign = 'center'; }      // 下
+    else if (i === 3) { dx = -24; dy = -4; ctx.textAlign = 'right'; }     // 左
+    ctx.fillStyle = colors[i];
+    ctx.fillText(Math.round(scores[i]*100)+'%', x+dx, y+dy);
+  }
+  ctx.restore();
+
+  // 维度名称
+  var nameLabels = ['数据敏感性', '量化抽象力', '逻辑推演力', '决策校准力'];
+  ctx.save();
+  ctx.font = '12px -apple-system, "PingFang SC", sans-serif';
+  ctx.fillStyle = '#3D566E';
+  ctx.textAlign = 'center';
+  for (var i = 0; i < 4; i++) {
+    var a = angles[i];
+    var offset = 42;
+    var x = cx + (r + offset) * Math.cos(a);
+    var y = cy + (r + offset) * Math.sin(a);
+    ctx.fillText(nameLabels[i], x, y);
+  }
+  ctx.restore();
+})();
+</script>
+
+</body>
+</html>

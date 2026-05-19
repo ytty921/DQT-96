@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Backup files
+*.bak
+*.v2.bak
+
+# Temp / scratch files
+temp_*
+*.tmp
+
+# OCR temp outputs
+DQT-96/ocr_juesezhizuo/
+DQT-96/ocr_*.py
+DQT-96/gen_listing.py
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Scratch Excel
+/新建 Microsoft Excel 工作表.xlsx
