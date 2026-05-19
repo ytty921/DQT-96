@@ -8,7 +8,7 @@ let userAnswers=[]; // {answer, score} per index
 let startTime=0,testId='';
 let userName='';
 let questionsReady=allQ.length>0;
-const SHEET_URL='https://script.google.com/macros/s/AKfycby-GeY8kzZPaj6YtBTVvY3F5SGfIwozm71_oZR0N6H3CQpmPMJLwAKMKUDgSNhVe7RGhA/exec';
+const SHEET_URL='https://script.google.com/macros/s/AKfycbyriHegn4-E5vjpr-kGjAmW4U3JClCkAYfgrQ7ocV4Vg6IMsBUFm4gOeg-LVM_yAe8giQ/exec';
 let dimState={1:{answered:0,totalPts:0,maxPts:0},2:{answered:0,totalPts:0,maxPts:0},3:{answered:0,totalPts:0,maxPts:0},4:{answered:0,totalPts:0,maxPts:0}};
 let dimDifficulty={1:2,2:2,3:2,4:2}; // 各维度当前自适应难度 (1=简单 2=中等 3=困难)
 
