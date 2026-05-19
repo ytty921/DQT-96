@@ -25,7 +25,7 @@
     <dt>出题方式</dt><dd>自适应——根据作答表现动态调整难度与维度侧重</dd>
     <dt>建议用时</dt><dd>约30分钟</dd>
   </dl>
-  <button class="btn btn-primary" onclick="showNameScreen()">开始测评</button>
+  <button class="btn btn-primary" onclick="showNameScreen()" disabled>题库加载中…</button>
 </div>
 </div>
 
@@ -58,6 +58,7 @@
 <!-- 结果页 -->
 <div id="resultScreen" class="result-screen hidden"></div>
 
+<script src="questions.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

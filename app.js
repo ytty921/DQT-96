@@ -3,16 +3,27 @@ const DIM_COLORS=['','#5A7F99','#3D566E','#5A7F99','#3D566E'];
 const TOTAL_Q=36;
 const MIN_PER_DIM=9;
 
-let allQ=[],selectedQ=[],currentIdx=0;
+let allQ=_ALL_QUESTIONS||[],selectedQ=[],currentIdx=0;
 let userAnswers=[]; // {answer, score} per index
 let startTime=0,testId='';
 let userName='';
+let questionsReady=allQ.length>0;
 const SHEET_URL='https://script.google.com/macros/s/AKfycbzNYj1qAM4_QFDuzGVz-MijZU_Ae6Dw0YWBR-ffSO4WxoEvS20dn7mj8W2FX-CwV7pJDg/exec';
 let dimState={1:{answered:0,totalPts:0,maxPts:0},2:{answered:0,totalPts:0,maxPts:0},3:{answered:0,totalPts:0,maxPts:0},4:{answered:0,totalPts:0,maxPts:0}};
 
-fetch('questions.json').then(r=>r.json()).then(data=>{allQ=data;});
+// 启用开始按钮
+(function(){
+  if(questionsReady){
+    var btn=document.querySelector('#startScreen .btn-primary');
+    if(btn){ btn.disabled=false; btn.textContent='开始测评'; }
+  }
+})();
 
 function showNameScreen(){
+  if(!questionsReady){
+    alert('题库加载中，请稍候再试…');
+    return;
+  }
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('nameScreen').classList.remove('hidden');
   document.getElementById('nameInput').focus();
@@ -31,6 +42,10 @@ function confirmName(){
 }
 
 function startQuiz(){
+  if(!questionsReady||!allQ.length){
+    alert('题库加载中，请稍候再试…');
+    return;
+  }
   // Check for saved progress
   let progress=loadProgress();
   if(progress && progress.currentIdx>0){
@@ -97,6 +112,7 @@ function pickNext(){
 
 function renderQuestion(){
   let q=selectedQ[currentIdx];
+  if(!q){ console.error('renderQuestion: 题目为空, idx='+currentIdx, selectedQ); alert('出错了，请刷新页面重试'); return; }
   let saved=userAnswers[currentIdx];
   let pct=Math.min((currentIdx)/TOTAL_Q*100,100).toFixed(0);
   document.getElementById('progressBar').style.width=pct+'%';
@@ -184,18 +200,15 @@ function selectJudge(el,val){
 
 function selectRank(optIdx,pos,btn){
   if(!Array.isArray(window._selected))window._selected=Array(window._rankN||4).fill(null);
-  // Toggle off if same position
   if(window._selected[optIdx]===pos){
     window._selected[optIdx]=null;
     btn.classList.remove('selected');
   }else{
-    // Clear old selection for this option row
     let row=btn.closest('.rank-row');
     row.querySelectorAll('.rank-pos-btn').forEach(b=>b.classList.remove('selected'));
     btn.classList.add('selected');
     window._selected[optIdx]=pos;
   }
-  // Refresh disabled states: each position can only be used once
   let allRows=document.querySelectorAll('.rank-row');
   allRows.forEach((row,ri)=>{
     row.querySelectorAll('.rank-pos-btn').forEach((b,pi)=>{
@@ -205,7 +218,6 @@ function selectRank(optIdx,pos,btn){
       b.style.cursor=taken?'not-allowed':'';
     });
   });
-  // Enable submit only when all positions assigned
   let allSet=window._selected.every(p=>p!==null);
   document.getElementById('submitBtn').disabled=!allSet;
 }
@@ -245,7 +257,6 @@ function submitAnswer(){
   let score=getScore(q,ua);
   let d=q.dim;
 
-  // If re-answering, revert old score (but keep answered/maxPts since question stays)
   if(userAnswers[currentIdx]){
     dimState[d].totalPts-=userAnswers[currentIdx].score;
   }else{
@@ -254,16 +265,13 @@ function submitAnswer(){
   }
   dimState[d].totalPts+=score;
 
-  // Store answer
   userAnswers[currentIdx]={answer:ua,score:score};
 
   currentIdx++;
   saveProgress();
 
-  // End of test?
   if(currentIdx>=TOTAL_Q){showResult();return;}
 
-  // Need more questions?
   if(currentIdx===selectedQ.length){
     let next=pickNext();
     if(!next){showResult();return;}
@@ -292,9 +300,7 @@ function loadProgress(){
     let raw=localStorage.getItem('dqt_progress');
     if(!raw)return null;
     let p=JSON.parse(raw);
-    // Validate basic structure
     if(!p.selectedQ||!Array.isArray(p.selectedQ)||typeof p.currentIdx!=='number')return null;
-    // Restore userName if saved
     if(p.userName) userName=p.userName;
     return p;
   }catch(e){return null;}
@@ -304,33 +310,85 @@ function clearProgress(){
   try{localStorage.removeItem('dqt_progress');}catch(e){}
 }
 
+// ==========================================
+// 满分等级 + 二维评级矩阵（SKILL 第六章）
+// ==========================================
+
+function maxPtsTier(totalMaxPts){
+  if(totalMaxPts>=75) return {tier:3, label:'高难度组', desc:'系统持续出困难题，挑战度高'};
+  if(totalMaxPts>=55) return {tier:2, label:'中难度组', desc:'中等难度为主'};
+  return {tier:1, label:'低难度组', desc:'以简单题为主'};
+}
+
+function getRating2D(pct,totalMaxPts){
+  var t=maxPtsTier(totalMaxPts);
+  // 百分比等级
+  var pctLevel=pct>=80?'优秀':pct>=60?'良好':pct>=40?'待提升':'薄弱';
+  // 二维矩阵: [百分比等级][满分等级]
+  var matrix={
+    '优秀':{3:{level:'卓越',cls:'lv-a',stars:4,desc:'数据思维卓越，在困难题上表现突出'},
+            2:{level:'优秀',cls:'lv-a',stars:4,desc:'数据思维突出，能在信息不完善时做出校准决策'},
+            1:{level:'良好',cls:'lv-b',stars:3,desc:'在简单题上表现良好，建议挑战更高难度'}},
+    '良好':{3:{level:'优秀',cls:'lv-a',stars:4,desc:'在困难题上达到良好水平，实际能力优秀'},
+            2:{level:'良好',cls:'lv-b',stars:3,desc:'具备良好的数据分析思维，能处理多变量问题'},
+            1:{level:'待提升',cls:'lv-c',stars:2,desc:'基础良好但仍需提升，尤其在复杂场景中'}},
+    '待提升':{3:{level:'待提升+',cls:'lv-c',stars:2,desc:'有基本的数据识别能力，但复杂推理仍需加强'},
+              2:{level:'待提升',cls:'lv-c',stars:2,desc:'有基本的数据识别能力，但复杂推理仍需加强'},
+              1:{level:'待提升-',cls:'lv-c',stars:2,desc:'需要进一步强化基础数据思维训练'}},
+    '薄弱':{3:{level:'薄弱+',cls:'lv-d',stars:1,desc:'基础数据意识有待加强，日常数据异常不易察觉'},
+            2:{level:'薄弱',cls:'lv-d',stars:1,desc:'基础数据意识有待建立，日常数据异常不易察觉'},
+            1:{level:'薄弱-',cls:'lv-d',stars:1,desc:'基础数据意识较为薄弱，建议系统学习数据思维'}}
+  };
+  var r=matrix[pctLevel][t.tier];
+  r.tier=t.tier;
+  r.tierLabel=t.label;
+  r.tierDesc=t.desc;
+  return r;
+}
+
+// 保留旧接口兼容
+function getStarLevel(pct){
+  var r=getRating2D(pct,55); // 默认中难度，仅用于非结果页的兼容调用
+  return r;
+}
+
+function renderStars(count,total,size,starColor){
+  size=size||'large';
+  var c=starColor||'';
+  return Array.from({length:total},function(_,i){
+    return '<span class="star-'+size+(i<count?' filled':' empty')+'"'+
+      (i<count&&c?' style="color:'+c+'"':'')+'>'+(i<count?'\u2605':'\u2606')+'</span>';
+  }).join('');
+}
+
 // === Results ===
 function showResult(){
   clearProgress();
   document.getElementById('quizScreen').classList.add('hidden');
   document.getElementById('resultScreen').classList.remove('hidden');
-  let totalScore=0,totalMax=0,dimScores=[0,0,0,0,0],dimMaxes=[0,0,0,0,0];
-  for(let d=1;d<=4;d++){dimScores[d]=dimState[d].totalPts;dimMaxes[d]=dimState[d].maxPts;totalScore+=dimScores[d];totalMax+=dimMaxes[d];}
-  let pct=totalMax>0?Math.round(totalScore/totalMax*100):0;
-  let totalScoreR=totalScore%1===0?totalScore.toFixed(0):totalScore.toFixed(1),totalMaxR=totalMax%1===0?totalMax.toFixed(0):totalMax.toFixed(1);
-  let duration=Math.round((Date.now()-startTime)/1000);
-  let min=Math.floor(duration/60),sec=duration%60;
-  let durStr=min>0?min+'分'+sec+'秒':sec+'秒';
+  var totalScore=0,totalMax=0,dimScores=[0,0,0,0,0],dimMaxes=[0,0,0,0,0];
+  for(var d=1;d<=4;d++){dimScores[d]=dimState[d].totalPts;dimMaxes[d]=dimState[d].maxPts;totalScore+=dimScores[d];totalMax+=dimMaxes[d];}
+  var pct=totalMax>0?Math.round(totalScore/totalMax*100):0;
+  var totalScoreR=totalScore%1===0?totalScore.toFixed(0):totalScore.toFixed(1),totalMaxR=totalMax%1===0?totalMax.toFixed(0):totalMax.toFixed(1);
+  var duration=Math.round((Date.now()-startTime)/1000);
+  var min=Math.floor(duration/60),sec=duration%60;
+  var durStr=min>0?min+'分'+sec+'秒':sec+'秒';
 
-  let overallLv=getStarLevel(pct);
+  // 二维评级
+  var rating=getRating2D(pct,totalMax);
 
-  function renderStars(count,total,size,starColor){size=size||'large';let c=starColor||'';return Array.from({length:total},(_,i)=>'<span class="star-'+size+(i<count?' filled':' empty')+'"'+(i<count&&c?' style="color:'+c+'"':'')+'>'+(i<count?'\u2605':'\u2606')+'</span>').join('');}
-
-  let html='<div class="result-header"><h1>\u6570\u636e\u601d\u7ef4\u80fd\u529b\u6d4b\u8bc4\u62a5\u544a</h1>';
+  var html='<div class="result-header"><h1>数据思维能力测评报告</h1>';
   if(userName){html+='<div class="user-name-label">'+userName+'</div>';}
-  html+='<div class="star-rating">'+renderStars(overallLv.stars,4,'large')+'</div>';
-  html+='<div class="level-desc">'+overallLv.desc+'</div>';
-  html+='<div class="score-label">\u7528\u65f6 '+durStr+'</div></div>';
+  html+='<div class="star-rating">'+renderStars(rating.stars,4,'large')+'</div>';
+  html+='<div class="level-badge '+rating.cls+'">'+rating.level+'</div>';
+  html+='<div class="tier-badge">'+rating.tierLabel+'</div>';
+  html+='<div class="level-desc">'+rating.desc+'</div>';
+  html+='<div class="score-label">满分 '+totalMaxR+' 分 | 用时 '+durStr+'</div></div>';
 
-  html+='<div class="result-card"><h2>\u80fd\u529b\u6982\u89c8</h2><div class="dim-list">';
-  for(let d=1;d<=4;d++){
-    let s=dimScores[d],m=dimMaxes[d],p=m>0?Math.round(s/m*100):0;
-    let sl=getStarLevel(p);
+  html+='<div class="result-card"><h2>能力概览</h2><div class="dim-list">';
+  for(var d=1;d<=4;d++){
+    var s=dimScores[d],m=dimMaxes[d],p=m>0?Math.round(s/m*100):0;
+    var sl=getStarLevel(p);
     html+='<div class="dim-item"><div class="dim-head"><span class="dim-name">'+DIM_NAMES[d]+'</span>';
     html+='<span class="dim-stars">'+renderStars(sl.stars,4,'small',DIM_COLORS[d])+'</span>';
     html+='<span class="dim-level '+sl.cls+'">'+sl.level+'</span></div>';
@@ -339,64 +397,63 @@ function showResult(){
   }
   html+='</div></div>';
 
-  let weakDims=[];
-  for(let d=1;d<=4;d++){let m=dimMaxes[d],p=m>0?Math.round(dimScores[d]/m*100):0;if(p<60)weakDims.push({dim:d,pct:p});}
+  var weakDims=[];
+  for(var d=1;d<=4;d++){var m=dimMaxes[d],p=m>0?Math.round(dimScores[d]/m*100):0;if(p<60)weakDims.push({dim:d,pct:p});}
   if(weakDims.length){
-    html+='<div class="weakness-card"><h2>\u26a0 \u63d0\u5347\u5efa\u8bae</h2>';
-    weakDims.sort((a,b)=>a.pct-b.pct);
-    weakDims.forEach(w=>{html+='<div class="weakness-item"><h3>'+DIM_NAMES[w.dim]+'</h3><p>'+getWeaknessAdvice(w.dim)+'</p></div>';});
+    html+='<div class="weakness-card"><h2>\u26a0 提升建议</h2>';
+    weakDims.sort(function(a,b){return a.pct-b.pct;});
+    weakDims.forEach(function(w){html+='<div class="weakness-item"><h3>'+DIM_NAMES[w.dim]+'</h3><p>'+getWeaknessAdvice(w.dim)+'</p></div>';});
     html+='</div>';
   }
 
   html+='<div class="result-actions">';
-  html+='<button class="btn btn-primary" onclick="downloadPdf()">\ud83d\udcc4 \u5bfc\u51fa PDF \u62a5\u544a</button>';
-  html+='<button class="btn btn-restart" onclick="location.reload()">\u91cd\u65b0\u6d4b\u8bc4</button>';
+  html+='<button class="btn btn-primary" onclick="downloadPdf()">\ud83d\udcc4 导出 PDF 报告</button>';
+  html+='<button class="btn btn-restart" onclick="location.reload()">重新测评</button>';
   html+='</div>';
 
   document.getElementById('resultScreen').innerHTML=html;
 
   // Store result for PDF export
-  window._lastResult={pct,totalScore,totalMax,dimScores,dimMaxes,duration,dimState,startTime,userName};
+  window._lastResult={pct,totalScore,totalMax,dimScores,dimMaxes,duration,dimState,startTime,userName,rating};
 
-  // Store result summary in localStorage for history
-  saveResultSummary(pct,totalScore,totalMax,dimScores,dimMaxes,duration);
+  // Store in localStorage for history
+  saveResultSummary(pct,totalScore,totalMax,dimScores,dimMaxes,duration,rating);
 
-  // Upload to Google Sheets (fire-and-forget)
-  uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration);
+  // Upload to Google Sheets
+  uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration,rating);
 }
 
 function downloadPdf(){
-  let r=window._lastResult;
+  var r=window._lastResult;
   if(!r)return;
-  let {pct,totalScore,totalMax,dimScores,dimMaxes,duration,dimState}=r;
-  let min=Math.floor(duration/60),sec=duration%60;
-  let durStr=min>0?min+'\u5206'+sec+'\u79d2':sec+'\u79d2';
-  let ts=new Date().toLocaleString('zh-CN');
-  let overallLv=getStarLevel(pct);
+  var pct=r.pct,totalScore=r.totalScore,totalMax=r.totalMax,dimScores=r.dimScores,dimMaxes=r.dimMaxes,duration=r.duration,rating=r.rating;
+  var min=Math.floor(duration/60),sec=duration%60;
+  var durStr=min>0?min+'分'+sec+'秒':sec+'秒';
+  var ts=new Date().toLocaleString('zh-CN');
 
-  // Collect weakness dims
-  let weakDims=[];
-  for(let d=1;d<=4;d++){let m=dimMaxes[d],p=m>0?Math.round(dimScores[d]/m*100):0;if(p<60)weakDims.push({dim:d,pct:p});}
-  weakDims.sort((a,b)=>a.pct-b.pct);
+  // Weakness dims
+  var weakDims=[];
+  for(var d=1;d<=4;d++){var m=dimMaxes[d],p=m>0?Math.round(dimScores[d]/m*100):0;if(p<60)weakDims.push({dim:d,pct:p});}
+  weakDims.sort(function(a,b){return a.pct-b.pct;});
 
-  // Build dim rows
-  let dimRows='';
-  for(let d=1;d<=4;d++){
-    let s=dimScores[d],m=dimMaxes[d],p=m>0?Math.round(s/m*100):0;
-    let sl=getStarLevel(p);
+  // Dim rows
+  var dimRows='';
+  for(var d=1;d<=4;d++){
+    var s=dimScores[d],m=dimMaxes[d],p=m>0?Math.round(s/m*100):0;
+    var sl=getStarLevel(p);
     dimRows+='<tr><td style="color:'+DIM_COLORS[d]+';font-weight:700">'+DIM_NAMES[d]+'</td><td style="color:'+DIM_COLORS[d]+'">'+'\u2605'.repeat(sl.stars)+'\u2606'.repeat(4-sl.stars)+'</td><td>'+sl.level+'</td><td style="font-size:12px;color:#666">'+getDimDesc(d,p)+'</td></tr>';
   }
 
-  // Build weakness rows
-  let weakRows='';
+  // Weakness rows
+  var weakRows='';
   if(weakDims.length){
-    weakDims.forEach(w=>{
+    weakDims.forEach(function(w){
       weakRows+='<div class="weak-card"><h3>'+DIM_NAMES[w.dim]+'</h3><p>'+getWeaknessAdvice(w.dim)+'</p></div>';
     });
   }
 
-  let pw=window.open('','_blank','width=900,height=700');
-  pw.document.write('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>DQT \u6d4b\u8bc4\u62a5\u544a</title>');
+  var pw=window.open('','_blank','width=900,height=700');
+  pw.document.write('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>DQT 测评报告</title>');
   pw.document.write('<style>');
   pw.document.write('*{margin:0;padding:0;box-sizing:border-box}');
   pw.document.write('body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#3D566E;line-height:1.7;padding:0}');
@@ -404,7 +461,12 @@ function downloadPdf(){
   pw.document.write('.header{text-align:center;border-bottom:1px solid #A9BFD1;padding-bottom:20px;margin-bottom:24px}');
   pw.document.write('.header h1{font-size:24px;color:#5A7F99;margin-bottom:4px}');
   pw.document.write('.header .stars{font-size:36px;margin:8px 0;letter-spacing:6px;color:#5A7F99}');
-  pw.document.write('.header .badge{display:inline-block;font-size:16px;font-weight:700;padding:4px 18px;border-radius:20px;margin-top:4px;background:#e8eff5;color:#5A7F99}');
+  pw.document.write('.header .badge{display:inline-block;font-size:16px;font-weight:700;padding:4px 18px;border-radius:20px;margin:4px 4px 0;background:#e8eff5;color:#5A7F99}');
+  pw.document.write('.header .badge.lv-a{background:#d1fae5;color:#065f46}');
+  pw.document.write('.header .badge.lv-b{background:#dbeafe;color:#1e40af}');
+  pw.document.write('.header .badge.lv-c{background:#fef3c7;color:#92400e}');
+  pw.document.write('.header .badge.lv-d{background:#fee2e2;color:#991b1b}');
+  pw.document.write('.header .tier-badge{display:inline-block;font-size:12px;padding:2px 10px;border-radius:10px;background:#f1f5f9;color:#64748b}');
   pw.document.write('.header .meta{font-size:13px;color:#A9BFD1}');
   pw.document.write('.section{margin-bottom:24px}');
   pw.document.write('.section h2{font-size:16px;font-weight:700;border-left:3px solid #5A7F99;padding-left:10px;margin-bottom:12px;color:#5A7F99}');
@@ -414,47 +476,44 @@ function downloadPdf(){
   pw.document.write('.weak-card{background:#e8eff5;border-left:3px solid #5A7F99;padding:12px 16px;margin-bottom:10px;border-radius:0 6px 6px 0}');
   pw.document.write('.weak-card h3{font-size:14px;color:#3D566E;margin-bottom:4px}');
   pw.document.write('.weak-card p{font-size:13px;color:#5A7F99}');
-  pw.document.write('.chart-wrap{max-width:360px;margin:0 auto 20px}');
   pw.document.write('.footer{text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px;margin-top:20px}');
   pw.document.write('@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.report{padding:0}}');
   pw.document.write('</style></head><body><div class="report">');
   
-  // Header
-  pw.document.write('<div class="header"><h1>\u6570\u636e\u601d\u7ef4\u80fd\u529b\u6d4b\u8bc4\u62a5\u544a</h1>');
+  // Header with 2D rating
+  pw.document.write('<div class="header"><h1>数据思维能力测评报告</h1>');
   if(userName){pw.document.write('<div style="font-size:16px;color:#3D566E;margin-bottom:4px">'+userName+'</div>');}
-  pw.document.write('<div class="stars">'+'\u2605'.repeat(overallLv.stars)+'\u2606'.repeat(4-overallLv.stars)+'</div>');
-  pw.document.write('<div class="badge">'+overallLv.level+'</div>');
-  pw.document.write('<div style="font-size:14px;color:#5A7F99;margin-top:6px">'+overallLv.desc+'</div>');
-  pw.document.write('<div class="meta">\u7528\u65f6 '+durStr+' \uff5c '+ts+'</div></div>');
+  pw.document.write('<div class="stars">'+'\u2605'.repeat(rating.stars)+'\u2606'.repeat(4-rating.stars)+'</div>');
+  pw.document.write('<div class="badge '+rating.cls+'">'+rating.level+'</div>');
+  pw.document.write('<div class="tier-badge">'+rating.tierLabel+'</div>');
+  pw.document.write('<div style="font-size:14px;color:#5A7F99;margin-top:6px">'+rating.desc+'</div>');
+  pw.document.write('<div class="meta">满分 '+totalMax+' 分 | 用时 '+durStr+' | '+ts+'</div></div>');
   
   // Dimension table
-  pw.document.write('<div class="section"><h2>\u80fd\u529b\u6982\u89c8</h2>');
-  pw.document.write('<table><tr><th>\u7ef4\u5ea6</th><th>\u7b49\u7ea7</th><th>\u8bc4\u4ef7</th><th>\u8bf4\u660e</th></tr>');
+  pw.document.write('<div class="section"><h2>能力概览</h2>');
+  pw.document.write('<table><tr><th>维度</th><th>等级</th><th>评价</th><th>说明</th></tr>');
   pw.document.write(dimRows);
   pw.document.write('</table></div>');
   
   // Weakness
   if(weakRows){
-    pw.document.write('<div class="section"><h2>\u8584\u5f31\u9879\u63d0\u793a</h2>'+weakRows+'</div>');
+    pw.document.write('<div class="section"><h2>薄弱项提示</h2>'+weakRows+'</div>');
   }
   
-  // Footer
-  pw.document.write('<div class="footer">DQT \u00b7 \u6570\u636e\u601d\u7ef4\u80fd\u529b\u6d4b\u8bc4 \u00b7 \u62a5\u544a\u751f\u6210\u65f6\u95f4\uff1a'+ts+'</div>');
+  pw.document.write('<div class="footer">DQT · 数据思维能力测评 · 报告生成时间：'+ts+'</div>');
   pw.document.write('</div>');
-  
-  // Auto-print after DOM ready
   pw.document.write('<script>setTimeout(function(){window.print();},300);<\/script>');
   pw.document.write('</body></html>');
   pw.document.close();
 }
 
 function downloadResult(){
-  let totalScore=0,totalMax=0,dimScores=[0,0,0,0,0],dimMaxes=[0,0,0,0,0];
-  for(let d=1;d<=4;d++){dimScores[d]=dimState[d].totalPts;dimMaxes[d]=dimState[d].maxPts;totalScore+=dimScores[d];totalMax+=dimMaxes[d];}
-  let pct=totalMax>0?Math.round(totalScore/totalMax*100):0;
-  let duration=Math.round((Date.now()-startTime)/1000);
+  var totalScore=0,totalMax=0,dimScores=[0,0,0,0,0],dimMaxes=[0,0,0,0,0];
+  for(var d=1;d<=4;d++){dimScores[d]=dimState[d].totalPts;dimMaxes[d]=dimState[d].maxPts;totalScore+=dimScores[d];totalMax+=dimMaxes[d];}
+  var pct=totalMax>0?Math.round(totalScore/totalMax*100):0;
+  var duration=Math.round((Date.now()-startTime)/1000);
 
-  let result={
+  var result={
     testId:'DQT-'+new Date().toISOString().replace(/[:.]/g,'-').slice(0,19),
     timestamp:new Date().toISOString(),
     totalScore:totalScore,totalMax:totalMax,percentage:pct,
@@ -462,16 +521,16 @@ function downloadResult(){
     dimensions:{},
     answers:[]
   };
-  for(let d=1;d<=4;d++){
+  for(var d=1;d<=4;d++){
     result.dimensions[DIM_NAMES[d]]={
       score:Math.round(dimScores[d]*10)/10,
       max:Math.round(dimMaxes[d]*10)/10,
       percentage:dimMaxes[d]>0?Math.round(dimScores[d]/dimMaxes[d]*100):0
     };
   }
-  for(let i=0;i<Math.min(selectedQ.length,userAnswers.length);i++){
+  for(var i=0;i<Math.min(selectedQ.length,userAnswers.length);i++){
     if(!userAnswers[i])continue;
-    let q=selectedQ[i],ua=userAnswers[i];
+    var q=selectedQ[i],ua=userAnswers[i];
     result.answers.push({
       order:i+1,qid:q.id,dim:DIM_NAMES[q.dim],diff:q.diff,type:q.type,
       question:q.q,
@@ -481,18 +540,18 @@ function downloadResult(){
     });
   }
 
-  let blob=new Blob([JSON.stringify(result,null,2)],{type:'application/json'});
-  let url=URL.createObjectURL(blob);
-  let a=document.createElement('a');
+  var blob=new Blob([JSON.stringify(result,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
   a.href=url;a.download=result.testId+'.json';
   document.body.appendChild(a);a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
-function saveResultSummary(pct,totalScore,totalMax,dimScores,dimMaxes,duration){
+function saveResultSummary(pct,totalScore,totalMax,dimScores,dimMaxes,duration,rating){
   try{
-    let history=JSON.parse(localStorage.getItem('dqt_history')||'[]');
+    var history=JSON.parse(localStorage.getItem('dqt_history')||'[]');
     history.push({
       userName,
       timestamp:new Date().toISOString(),
@@ -501,32 +560,32 @@ function saveResultSummary(pct,totalScore,totalMax,dimScores,dimMaxes,duration){
       dim2:dimMaxes[2]>0?Math.round(dimScores[2]/dimMaxes[2]*100):0,
       dim3:dimMaxes[3]>0?Math.round(dimScores[3]/dimMaxes[3]*100):0,
       dim4:dimMaxes[4]>0?Math.round(dimScores[4]/dimMaxes[4]*100):0,
-      durationSeconds:duration
+      durationSeconds:duration,
+      ratingLevel:rating?rating.level:'',
+      tierLabel:rating?rating.tierLabel:''
     });
-    // Keep only last 20
     if(history.length>20)history=history.slice(-20);
     localStorage.setItem('dqt_history',JSON.stringify(history));
   }catch(e){}
 }
 
-function uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration){
+function uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration,rating){
   try{
-    let dimNames=['数据敏感性','量化抽象力','逻辑推演力','决策校准力'];
-    let dimPcts={};
-    for(let d=1;d<=4;d++){
+    var dimNames=['数据敏感性','量化抽象力','逻辑推演力','决策校准力'];
+    var dimPcts={};
+    for(var d=1;d<=4;d++){
       dimPcts[dimNames[d-1]]={percentage:dimMaxes[d]>0?Math.round(dimScores[d]/dimMaxes[d]*100):0};
     }
 
-    // collect per-question detail
-    let answers=[];
-    for(let i=0;i<selectedQ.length;i++){
-      let q=selectedQ[i],ua=userAnswers[i];
+    var answers=[];
+    for(var i=0;i<selectedQ.length;i++){
+      var q=selectedQ[i],ua=userAnswers[i];
       if(!ua)continue;
-      let correctAns=Array.isArray(q.ans)?q.ans:[q.ans];
-      let userAns=ua.answer;
-      let isCorrect=false;
+      var correctAns=Array.isArray(q.ans)?q.ans:[q.ans];
+      var userAns=ua.answer;
+      var isCorrect=false;
       if(Array.isArray(correctAns)&&Array.isArray(userAns)){
-        isCorrect=correctAns.length===userAns.length&&correctAns.every(v=>userAns.includes(v));
+        isCorrect=correctAns.length===userAns.length&&correctAns.every(function(v){return userAns.includes(v);});
       }else if(!Array.isArray(correctAns)&&!Array.isArray(userAns)){
         isCorrect=correctAns===userAns;
       }
@@ -539,13 +598,15 @@ function uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration){
       });
     }
 
-    let min=Math.floor(duration/60),sec=duration%60;
-    let ts=new Date().toLocaleString('zh-CN',{hour12:false});
+    var min=Math.floor(duration/60),sec=duration%60;
+    var ts=new Date().toLocaleString('zh-CN',{hour12:false});
 
-    let payload={
+    var payload={
       userName, testId, timestamp:ts, totalScore, totalMax,
       percentage:pct, durationSeconds:duration,
-      dimensions:dimPcts, answers
+      dimensions:dimPcts, answers,
+      tierLabel: rating?rating.tierLabel:'',
+      ratingLevel: rating?rating.level:''
     };
 
     fetch(SHEET_URL,{
@@ -557,30 +618,23 @@ function uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration){
   }catch(e){}
 }
 
-function getStarLevel(pct){
-  if(pct>=80)return{stars:4,level:'\u4f18\u79c0',desc:'\u6570\u636e\u601d\u7ef4\u7a81\u51fa\uff0c\u80fd\u5728\u4fe1\u606f\u4e0d\u5b8c\u5584\u65f6\u505a\u51fa\u6821\u51c6\u51b3\u7b56',cls:'lv-a'};
-  if(pct>=60)return{stars:3,level:'\u826f\u597d',desc:'\u5177\u5907\u826f\u597d\u7684\u6570\u636e\u5206\u6790\u601d\u7ef4\uff0c\u80fd\u5904\u7406\u591a\u53d8\u91cf\u95ee\u9898',cls:'lv-b'};
-  if(pct>=40)return{stars:2,level:'\u5f85\u63d0\u5347',desc:'\u6709\u57fa\u672c\u7684\u6570\u636e\u8bc6\u522b\u80fd\u529b\uff0c\u4f46\u590d\u6742\u63a8\u7406\u4ecd\u9700\u52a0\u5f3a',cls:'lv-c'};
-  return{stars:1,level:'\u8584\u5f31',desc:'\u57fa\u7840\u6570\u636e\u610f\u8bc6\u6709\u5f85\u5efa\u7acb\uff0c\u65e5\u5e38\u6570\u636e\u5f02\u5e38\u4e0d\u6613\u5bdf\u89c9',cls:'lv-d'};
-}
-
 function getDimDesc(dim,pct){
-  const D={
-    1:{h:'\u4f60\u5bf9\u5bb6\u5ead\u8d26\u5355\u4e0a\u7684\u6570\u5b57\u53d8\u5316\u975e\u5e38\u654f\u9510\u3002\u770b\u5230\u5f00\u652f\u7a81\u7136\u7ffb\u500d\uff0c\u4f60\u4f1a\u672c\u80fd\u5730\u6392\u67e5\u662f\u771f\u5b9e\u82b1\u4e86\u66f4\u591a\u94b1\uff0c\u8fd8\u662f\u6362\u4e86\u8bb0\u8d26\u8f6f\u4ef6\u5bfc\u81f4\u5f52\u7c7b\u53d8\u4e86\u3001\u6216\u8005\u94f6\u884c\u7cfb\u7edf\u5ef6\u8fdf\u5165\u8d26\u3002\u4f60\u80fd\u8fa8\u522b\u4ec0\u4e48\u662f\u771f\u6b63\u7684\u5f02\u5e38\uff0c\u4ec0\u4e48\u662f\u770b\u8d77\u6765\u5413\u4eba\u4f46\u5176\u5b9e\u4e0d\u5947\u602a\u7684\u6b63\u5e38\u6ce2\u52a8\u3002',m:'\u4f60\u80fd\u53d1\u73b0\u5927\u90e8\u5206\u660e\u663e\u7684\u8d26\u5355\u5f02\u5e38\uff08\u6bd4\u5982\u7535\u8d39\u7a81\u7136\u66b4\u6da8\uff09\uff0c\u4f46\u5bf9\u4e8e\u66f4\u9690\u853d\u7684\u95ee\u9898\u2014\u2014\u6bd4\u5982\u6362\u4e86\u7edf\u8ba1\u53e3\u5f84\u5bfc\u81f4\u6570\u636e\u770b\u4e0a\u53bb\u53d8\u4e86\u4f46\u5b9e\u9645\u4e0a\u6ca1\u53d8\u2014\u2014\u8fd8\u9700\u8981\u591a\u79ef\u7d2f\u7ecf\u9a8c\u3002',l:'\u4f60\u5bf9\u8d26\u5355\u6570\u636e\u7684\u51c6\u786e\u6027\u548c\u4e00\u81f4\u6027\u95ee\u9898\u8fd8\u4e0d\u591f\u654f\u611f\u3002\u5efa\u8bae\u517b\u6210\u4e60\u60ef\uff1a\u770b\u5230\u4efb\u4f55\u6570\u5b57\u660e\u663e\u53d8\u5316\u65f6\uff0c\u5148\u95ee\u81ea\u5df1\u201c\u8fd9\u4e2a\u53d8\u5316\u662f\u771f\u5b9e\u53d1\u751f\u7684\uff0c\u8fd8\u662f\u8bb0\u5f55\u65b9\u5f0f\u53d8\u4e86\u9020\u6210\u7684\u9519\u89c9\u201d\u3002'},
-    2:{h:'\u4f60\u5584\u4e8e\u5c06\u6a21\u7cca\u4e1a\u52a1\u6982\u5ff5\u62c6\u89e3\u4e3a\u53ef\u91cf\u5316\u5b50\u7ef4\u5ea6\uff0c\u5728\u6570\u636e\u7f3a\u5931\u65f6\u4ecd\u80fd\u6784\u5efa\u4e0a\u4e0b\u754c\u4f30\u7b97\uff0c\u5e76\u80fd\u4e3b\u52a8\u66b4\u9732\u4ee3\u7406\u6307\u6807\u7684\u6548\u5ea6\u7f3a\u9677\u3002',m:'\u4f60\u5177\u5907\u57fa\u672c\u7684\u91cf\u5316\u62c6\u89e3\u80fd\u529b\uff0c\u4f46\u5728\u6570\u636e\u7a00\u758f\u573a\u666f\u4e0b\u7684\u63a8\u65ad\u548c\u4e0d\u786e\u5b9a\u6027\u5904\u7406\u65b9\u9762\u8fd8\u9700\u63d0\u5347\u3002',l:'\u4f60\u5728\u5c06\u62bd\u8c61\u6982\u5ff5\u8f6c\u5316\u4e3a\u53ef\u91cf\u5316\u6307\u6807\u65b9\u9762\u8fd8\u9700\u5927\u91cf\u7ec3\u4e60\uff0c\u5efa\u8bae\u4ece\u201c\u62c6\u89e3\u201d\u601d\u7ef4\u5165\u624b\uff1a\u4efb\u4f55\u6a21\u7cca\u6982\u5ff5\u90fd\u53ef\u4ee5\u62c6\u4e3a2-3\u4e2a\u53ef\u89c2\u6d4b\u7684\u5b50\u7ef4\u5ea6\u3002'},
-    3:{h:'\u4f60\u5177\u5907\u5f3a\u70c8\u7684\u56e0\u679c\u63a8\u65ad\u610f\u8bc6\uff0c\u80fd\u672c\u80fd\u5730\u8ffd\u95ee\u201c\u8fd8\u6709\u4ec0\u4e48\u522b\u7684\u89e3\u91ca\uff1f\u201d\uff0c\u5e76\u80fd\u533a\u5206\u968f\u673a\u5b9e\u9a8c\u4e0e\u81ea\u7136\u5b9e\u9a8c\u7684\u9002\u7528\u8fb9\u754c\u3002',m:'\u4f60\u80fd\u8bc6\u522b\u5927\u90e8\u5206\u56e0\u679c\u8c2c\u8bef\uff0c\u4f46\u5bf9\u66f4\u590d\u6742\u7684\u56e0\u679c\u8bc6\u522b\u7b56\u7565\uff08\u5982\u5916\u751f\u53d8\u91cf\u3001\u65ad\u70b9\u8bbe\u8ba1\uff09\u8fd8\u9700\u66f4\u6df1\u5165\u5b66\u4e60\u3002',l:'\u4f60\u5bb9\u6613\u5c06\u76f8\u5173\u6027\u7b49\u540c\u4e8e\u56e0\u679c\u6027\uff0c\u5efa\u8bae\u517b\u6210\u201c\u8fd9\u4e2a\u7ed3\u8bba\u8fd8\u6709\u4ec0\u4e48\u522b\u7684\u89e3\u91ca\uff1f\u201d\u7684\u672c\u80fd\u53cd\u5e94\uff0c\u5b66\u4e60\u57fa\u672c\u7684\u56e0\u679c\u63a8\u65ad\u65b9\u6cd5\u3002'},
-    4:{h:'\u4f60\u80fd\u5728\u4fe1\u606f\u4e0d\u5b8c\u5907\u65f6\u505a\u51fa\u201c\u5e26\u6761\u4ef6\u7684\u51b3\u7b56\u201d\uff0c\u5584\u4e8e\u7528\u635f\u5931\u4ee3\u4ef7\u800c\u975e\u7edf\u8ba1\u6570\u503c\u9a71\u52a8\u6700\u7ec8\u9009\u62e9\uff0c\u5e76\u80fd\u533a\u5206\u53ef\u9006\u4e0e\u4e0d\u53ef\u9006\u51b3\u7b56\u3002',m:'\u4f60\u5177\u5907\u57fa\u672c\u7684\u51b3\u7b56\u6821\u51c6\u610f\u8bc6\uff0c\u4f46\u5728\u591a\u76ee\u6807\u51b2\u7a81\u548c\u63a2\u7d22-\u5229\u7528\u6743\u8861\u65b9\u9762\u8fd8\u9700\u63d0\u5347\u3002',l:'\u4f60\u5728\u51b3\u7b56\u6821\u51c6\u65b9\u9762\u8fd8\u9700\u52a0\u5f3a\uff0c\u5efa\u8bae\u5b66\u4e60\u201c\u671f\u671b\u4ef7\u503c\u201d\u601d\u7ef4\u548c\u201c\u53ef\u9006vs\u4e0d\u53ef\u9006\u51b3\u7b56\u201d\u7684\u533a\u5206\u6846\u67b6\u3002'}
+  var D={
+    1:{h:'你对家庭账单上的数字变化非常敏锐。看到开支突然翻倍，你会本能地排查是真实花了更多钱，还是换了记账软件导致归类变了、或者银行系统延迟入账。你能辨别什么是真正的异常，什么是看起来吓人但其实不奇怪的正常波动。',m:'你能发现大部分明显的账单异常（比如电费突然暴涨），但对于更隐蔽的问题——比如换了统计口径导致数据看上去变了但实际上没变——还需要多积累经验。',l:'你对账单数据的准确性和一致性问题还不够敏感。建议养成习惯：看到任何数字明显变化时，先问自己"这个变化是真实发生的，还是记录方式变了造成的错觉"。'},
+    2:{h:'你善于将模糊业务概念拆解为可量化子维度，在数据缺失时仍能构建上下界估算，并能主动暴露代理指标的效度缺陷。',m:'你具备基本的量化拆解能力，但在数据稀疏场景下的推断和不确定性处理方面还需提升。',l:'你在将抽象概念转化为可量化指标方面还需大量练习，建议从"拆解"思维入手：任何模糊概念都可以拆为2-3个可观测的子维度。'},
+    3:{h:'你具备强烈的因果推断意识，能本能地追问"还有什么别的解释？"，并能区分随机实验与自然实验的适用边界。',m:'你能识别大部分因果谬误，但对更复杂的因果识别策略（如外生变量、断点设计）还需更深入学习。',l:'你容易将相关性等同于因果性，建议养成"这个结论还有什么别的解释？"的本能反应，学习基本的因果推断方法。'},
+    4:{h:'你能在信息不完备时做出"带条件的决策"，善于用损失代价而非统计数值驱动最终选择，并能区分可逆与不可逆决策。',m:'你具备基本的决策校准意识，但在多目标冲突和探索-利用权衡方面还需提升。',l:'你在决策校准方面还需加强，建议学习"期望价值"思维和"可逆vs不可逆决策"的区分框架。'}
   };
-  let r=D[dim];
+  var r=D[dim];
   return pct>=75?r.h:pct>=50?r.m:r.l;
 }
 
 function getWeaknessAdvice(dim){
-  const A={
-    1:'\u5efa\u8bae\u4ece\u4ee5\u4e0b\u65b9\u9762\u63d0\u5347\u5bf9\u8d26\u5355\u6570\u636e\u7684\u654f\u611f\u5ea6\uff1a\u2460\u770b\u5230\u4efb\u4f55\u5f00\u652f\u5927\u5e45\u53d8\u52a8\uff0c\u5148\u6392\u67e5\u662f\u4e0d\u662f\u6362\u4e86\u8bb0\u8d26\u65b9\u5f0f\u3001\u5206\u7c7b\u89c4\u5219\u53d8\u4e86\u3001\u6216\u8005\u94f6\u884c\u8d26\u5355\u5ef6\u8fdf\uff1b\u2461\u5efa\u7acb\u201c\u5e38\u89c1\u5047\u5f02\u5e38\u6e05\u5355\u201d\uff0c\u6bd4\u5982\u5e74\u5e95\u5956\u91d1\u7ed3\u7b97\u5bfc\u81f4\u67d0\u4e2a\u6708\u6536\u5165\u7ffb\u500d\u3001\u7f13\u5b58\u672a\u66f4\u65b0\u5bfc\u81f4\u91cd\u590d\u8ba1\u7b97\u7b49\uff1b\u2462\u6bcf\u6b21\u770b\u5230\u8ba9\u4f60\u60ca\u8bb6\u7684\u6570\u5b57\uff0c\u5148\u95ee\u81ea\u5df1\u201c\u8fd9\u4e2a\u6570\u5b57\u53ef\u80fd\u662f\u600e\u4e48\u7edf\u8ba1\u51fa\u6765\u7684\uff0c\u6709\u6ca1\u6709\u88ab\u5f55\u9519\u6216\u7b97\u9519\u201d\u3002',
-    2:'\u5efa\u8bae\u4ece\u4ee5\u4e0b\u65b9\u9762\u63d0\u5347\uff1a\u2460\u7ec3\u4e60\u5c06\u6bcf\u4e2a\u6a21\u7cca\u6982\u5ff5\u62c6\u89e3\u4e3a2-3\u4e2a\u53ef\u89c2\u6d4b\u5b50\u7ef4\u5ea6\u7684\u4e60\u60ef\uff1b\u2461\u5b66\u4e60\u8d39\u7c73\u4f30\u7b97\u6cd5\uff0c\u5728\u6570\u636e\u7f3a\u5931\u65f6\u6784\u5efa\u4e0a\u4e0b\u754c\uff1b\u2462\u5173\u6ce8\u201c\u6307\u6807\u6548\u5ea6\u201d\u2014\u2014\u6bcf\u4e2a\u4ee3\u7406\u6307\u6807\u90fd\u95ee\u201c\u5b83\u5230\u5e95\u5728\u5ea6\u91cf\u4ec0\u4e48\uff0c\u9057\u6f0f\u4e86\u4ec0\u4e48\u201d\u3002',
-    3:'\u5efa\u8bae\u91cd\u70b9\u5b66\u4e60\u56e0\u679c\u63a8\u65ad\u57fa\u7840\uff1a\u2460\u638c\u63e1\u201c\u76f8\u5173\u2260\u56e0\u679c\u201d\u7684\u5e38\u89c1\u6a21\u5f0f\uff08\u6df7\u6742\u3001\u81ea\u9009\u62e9\u3001\u53cd\u5411\u56e0\u679c\uff09\uff1b\u2461\u5b66\u4e60\u5de5\u5177\u53d8\u91cf\u3001\u53cc\u91cd\u5dee\u5206\u7b49\u57fa\u672c\u56e0\u679c\u8bc6\u522b\u7b56\u7565\uff1b\u2462\u517b\u6210\u201c\u770b\u5230\u7ed3\u8bba\u5148\u627e\u66ff\u4ee3\u89e3\u91ca\u201d\u7684\u601d\u7ef4\u4e60\u60ef\u3002',
-    4:'\u5efa\u8bae\u91cd\u70b9\u57f9\u517b\uff1a\u2460\u671f\u671b\u4ef7\u503c\u601d\u7ef4\u2014\u2014\u4efb\u4f55\u51b3\u7b56\u5148\u7b97\u671f\u671b\u6536\u76ca\u548c\u6700\u574f\u60c5\u51b5\uff1b\u2461\u53ef\u9006vs\u4e0d\u53ef\u9006\u51b3\u7b56\u533a\u5206\u2014\u2014\u524d\u8005\u5feb\u901f\u8bd5\u9519\uff0c\u540e\u8005\u63d0\u9ad8\u8bc1\u636e\u95e8\u69db\uff1b\u2462\u63a2\u7d22-\u5229\u7528\u610f\u8bc6\u2014\u2014\u4e0d\u8981\u6c38\u8fdc\u53ea\u9009\u5df2\u77e5\u6700\u4f18\uff0c\u8981\u7559\u51fa\u63a2\u7d22\u7a7a\u95f4\u3002'
+  var A={
+    1:'建议从以下方面提升对账单数据的敏感度：①看到任何开支大幅变动，先排查是不是换了记账方式、分类规则变了、或者银行账单延迟；②建立"常见假异常清单"，比如年底奖金结算导致某个月收入翻倍、缓存未更新导致重复计算等；③每次看到让你惊讶的数字，先问自己"这个数字可能是怎么统计出来的，有没有被录错或算错"。',
+    2:'建议从以下方面提升：①练习将每个模糊概念拆解为2-3个可观测子维度的习惯；②学习费米估算法，在数据缺失时构建上下界；③关注"指标效度"——每个代理指标都问"它到底在度量什么，遗漏了什么"。',
+    3:'建议重点学习因果推断基础：①掌握"相关≠因果"的常见模式（混杂、自选择、反向因果）；②学习工具变量、双重差分等基本因果识别策略；③养成"看到结论先找替代解释"的思维习惯。',
+    4:'建议重点培养：①期望价值思维——任何决策先算期望收益和最坏情况；②可逆vs不可逆决策区分——前者快速试错，后者提高证据门槛；③探索-利用意识——不要永远只选已知最优，要留出探索空间。'
   };
   return A[dim];
 }
