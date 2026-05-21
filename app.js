@@ -285,7 +285,7 @@ function goPrev(){
 // ==========================================
 // 满分等级 + 二维评级矩阵（SKILL 第六章）
 // 难度等级判定：基于 diff=3 题目的表现（而非 ΣmaxPts 或 avgDiff）
-//   高难度组：diff=3 做题数≥4 且 正确率≥50%
+//   高难度组：diff=3 做题数≥4 且 正确率≥67%（2/3）
 //   中难度组：得分率≥40% 但未满足高难度条件
 //   低难度组：得分率<40%
 // ==========================================
@@ -352,7 +352,7 @@ function showResult(){
   var durStr=min>0?min+'分'+sec+'秒':sec+'秒';
 
   // 统计 diff=3 题目的表现（用于难度组判定）
-  // 规则：diff=3 做题数≥4 且 正确率≥50% → 高难度组
+  // 规则：diff=3 做题数≥4 且 正确率≥67%（2/3）→ 高难度组
   var diff3Count=0, diff3Correct=0;
   for(var i=0;i<selectedQ.length;i++){
     if(!userAnswers[i])continue;
