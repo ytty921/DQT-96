@@ -367,7 +367,7 @@ function showResult(){
   // 二维评级（基于 diff=3 表现）
   var rating=getRating2D(pct,diff3Count,diff3Correct);
 
-  var html='<div class="result-header"><h1>数据思维能力测评报告</h1>';
+  var html='<div class="result-header"><h1>数据思维能力测试报告</h1>';
   if(userName){html+='<div class="user-name-label">'+userName+'</div>';}
   html+='<div class="star-rating">'+renderStars(rating.stars,4,'large')+'</div>';
   html+='<div class="level-badge '+rating.cls+'">'+rating.level+'</div>';
@@ -444,7 +444,7 @@ function downloadPdf(){
   }
 
   var pw=window.open('','_blank','width=900,height=700');
-  pw.document.write('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>DQT 测评报告</title>');
+  pw.document.write('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>DQT 测试报告</title>');
   pw.document.write('<style>');
   pw.document.write('*{margin:0;padding:0;box-sizing:border-box}');
   pw.document.write('body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#3D566E;line-height:1.7;padding:0}');
@@ -472,7 +472,7 @@ function downloadPdf(){
   pw.document.write('</style></head><body><div class="report">');
   
   // Header with 2D rating
-  pw.document.write('<div class="header"><h1>数据思维能力测评报告</h1>');
+  pw.document.write('<div class="header"><h1>数据思维能力测试报告</h1>');
   if(userName){pw.document.write('<div style="font-size:16px;color:#3D566E;margin-bottom:4px">'+userName+'</div>');}
   pw.document.write('<div class="stars">'+'\u2605'.repeat(rating.stars)+'\u2606'.repeat(4-rating.stars)+'</div>');
   pw.document.write('<div class="badge '+rating.cls+'">'+rating.level+'</div>');
