@@ -47,25 +47,6 @@ function startQuiz(){
     alert('题库加载中，请稍候再试…');
     return;
   }
-  // Check for saved progress
-  let progress=loadProgress();
-  if(progress && progress.currentIdx>0){
-    if(confirm('检测到上次未完成的测试（已完成 '+progress.currentIdx+'/'+TOTAL_Q+' 题），是否继续？')){
-      selectedQ=progress.selectedQ;
-      currentIdx=progress.currentIdx;
-      userAnswers=progress.userAnswers||[];
-      dimState=progress.dimState;
-      startTime=progress.startTime||Date.now();
-      testId=progress.testId||(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8));
-      if(progress.userName) userName=progress.userName;
-      document.getElementById('startScreen').classList.add('hidden');
-      document.getElementById('quizScreen').classList.remove('hidden');
-      renderQuestion();
-      return;
-    }else{
-      clearProgress();
-    }
-  }
   // Fresh start
   selectedQ=[];currentIdx=0;userAnswers=[];
   startTime=Date.now();
@@ -78,7 +59,6 @@ function startQuiz(){
     let q=pickBalanced(pool, d);
     selectedQ.push(q);
   }
-  clearProgress();
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('quizScreen').classList.remove('hidden');
   renderQuestion();
@@ -285,7 +265,6 @@ function submitAnswer(){
   userAnswers[currentIdx]={answer:ua,score:score};
 
   currentIdx++;
-  saveProgress();
 
   if(currentIdx>=TOTAL_Q){showResult();return;}
 
@@ -300,33 +279,7 @@ function submitAnswer(){
 function goPrev(){
   if(currentIdx<=0)return;
   currentIdx--;
-  saveProgress();
   renderQuestion();
-}
-
-// === Persistence ===
-function saveProgress(){
-  try{
-    let p={selectedQ,currentIdx,userAnswers,dimState,dimDifficulty,startTime,testId,userName,savedAt:new Date().toISOString()};
-    localStorage.setItem('dqt_progress',JSON.stringify(p));
-  }catch(e){}
-}
-
-function loadProgress(){
-  try{
-    let raw=localStorage.getItem('dqt_progress');
-    if(!raw)return null;
-    let p=JSON.parse(raw);
-    if(!p.selectedQ||!Array.isArray(p.selectedQ)||typeof p.currentIdx!=='number')return null;
-    if(p.userName) userName=p.userName;
-    if(p.dimDifficulty) dimDifficulty=p.dimDifficulty;
-    else dimDifficulty={1:2,2:2,3:2,4:2};
-    return p;
-  }catch(e){return null;}
-}
-
-function clearProgress(){
-  try{localStorage.removeItem('dqt_progress');}catch(e){}
 }
 
 // ==========================================
@@ -388,7 +341,6 @@ function renderStars(count,total,size,starColor){
 
 // === Results ===
 function showResult(){
-  clearProgress();
   document.getElementById('quizScreen').classList.add('hidden');
   document.getElementById('resultScreen').classList.remove('hidden');
   var totalScore=0,totalMax=0,dimScores=[0,0,0,0,0],dimMaxes=[0,0,0,0,0];
