@@ -75,7 +75,7 @@ function startQuiz(){
   for(let d=1;d<=4;d++){
     let pool=allQ.filter(q=>q.dim===d&&q.diff===2);
     if(!pool.length) pool=allQ.filter(q=>q.dim===d);
-    let q=pool[Math.floor(Math.random()*pool.length)];
+    let q=pickBalanced(pool, d);
     selectedQ.push(q);
   }
   clearProgress();
@@ -107,7 +107,18 @@ function pickNext(){
   if(!pool.length)pool=allQ.filter(q=>q.dim===targetDim&&!usedIds.has(q.id));
   if(!pool.length)pool=allQ.filter(q=>!usedIds.has(q.id));
   if(!pool.length)return null;
-  return pool[Math.floor(Math.random()*pool.length)];
+  return pickBalanced(pool, targetDim);
+}
+
+// 题型软平衡：优先选用该维度已出现最少的题型，从前3名中随机抽取
+function pickBalanced(pool, dim){
+  let typeCount={};
+  selectedQ.forEach(function(q){
+    if(q.dim===dim){ typeCount[q.type]=(typeCount[q.type]||0)+1; }
+  });
+  pool.sort(function(a,b){ return (typeCount[a.type]||0)-(typeCount[b.type]||0); });
+  let n=Math.min(3, pool.length);
+  return pool[Math.floor(Math.random()*n)];
 }
 
 function renderQuestion(){
@@ -265,9 +276,10 @@ function submitAnswer(){
   }
   dimState[d].totalPts+=score;
 
-  // 自适应难度: 只有完全答对才升难度; 部分分/未答对 → 降难度
+  // 自适应难度: 满分→升, 部分分→不动(继续试探天花板), 0分→降
   var maxScore=q.type==='multiple'||q.type==='rank'?2*diffCoeff(q.diff):diffCoeff(q.diff);
   if(score>=maxScore){dimDifficulty[d]=Math.min(dimDifficulty[d]+1,3);}
+  else if(score>0){/* 部分分：不升不降，留在当前难度继续试探 */}
   else{dimDifficulty[d]=Math.max(dimDifficulty[d]-1,1);}
 
   userAnswers[currentIdx]={answer:ua,score:score};
@@ -319,16 +331,22 @@ function clearProgress(){
 
 // ==========================================
 // 满分等级 + 二维评级矩阵（SKILL 第六章）
+// 难度等级判定：基于 diff=3 题目的表现（而非 ΣmaxPts 或 avgDiff）
+//   高难度组：diff=3 做题数≥4 且 正确率≥50%
+//   中难度组：得分率≥40% 但未满足高难度条件
+//   低难度组：得分率<40%
 // ==========================================
 
-function avgDiffTier(avgDiff){
-  if(avgDiff>=2.0) return {tier:3, label:'高难度组', desc:'答对题以困难题为主，挑战能力强'};
-  if(avgDiff>=1.3) return {tier:2, label:'中难度组', desc:'答对题以中等难度为主'};
-  return {tier:1, label:'低难度组', desc:'答对题以简单题为主'};
+function diff3PerformanceTier(diff3Count, diff3Correct, overallPct){
+  if(diff3Count>=4 && diff3Count>0 && (diff3Correct/diff3Count)>=2/3)
+    return {tier:3, label:'高难度组', desc:'在困难题上表现稳定，挑战能力强'};
+  if(overallPct>=40)
+    return {tier:2, label:'中难度组', desc:'以中等难度题为主，仍有提升空间'};
+  return {tier:1, label:'低难度组', desc:'以简单题为主，基础能力有待加强'};
 }
 
-function getRating2D(pct,avgDiff){
-  var t=avgDiffTier(avgDiff);
+function getRating2D(pct,diff3Count,diff3Correct){
+  var t=diff3PerformanceTier(diff3Count||0, diff3Correct||0, pct);
   // 百分比等级
   var pctLevel=pct>=80?'优秀':pct>=60?'良好':pct>=40?'待提升':'薄弱';
   // 二维矩阵: [百分比等级][满分等级]
@@ -339,10 +357,10 @@ function getRating2D(pct,avgDiff){
     '良好':{3:{level:'优秀',cls:'lv-a',stars:4,desc:'在困难题上达到良好水平，实际能力优秀'},
             2:{level:'良好',cls:'lv-b',stars:3,desc:'具备良好的数据分析思维，能处理多变量问题'},
             1:{level:'待提升',cls:'lv-c',stars:2,desc:'基础良好但仍需提升，尤其在复杂场景中'}},
-    '待提升':{3:{level:'待提升+',cls:'lv-c',stars:2,desc:'有基本的数据识别能力，但复杂推理仍需加强'},
+    '待提升':{3:{level:'待提升+',cls:'lv-c',stars:2,desc:'已能应对部分困难题目，但整体准确率和深度尚有提升空间'},
               2:{level:'待提升',cls:'lv-c',stars:2,desc:'有基本的数据识别能力，但复杂推理仍需加强'},
               1:{level:'待提升-',cls:'lv-c',stars:2,desc:'需要进一步强化基础数据思维训练'}},
-    '薄弱':{3:{level:'薄弱+',cls:'lv-d',stars:1,desc:'基础数据意识有待加强，日常数据异常不易察觉'},
+    '薄弱':{3:{level:'薄弱+',cls:'lv-d',stars:1,desc:'曾被推送到困难题目但未能稳定把握，建议夯实地基再挑战高难度'},
             2:{level:'薄弱',cls:'lv-d',stars:1,desc:'基础数据意识有待建立，日常数据异常不易察觉'},
             1:{level:'薄弱-',cls:'lv-d',stars:1,desc:'基础数据意识较为薄弱，建议系统学习数据思维'}}
   };
@@ -355,7 +373,7 @@ function getRating2D(pct,avgDiff){
 
 // 保留旧接口兼容
 function getStarLevel(pct){
-  var r=getRating2D(pct,2.0); // 默认中难度，仅用于非结果页的兼容调用
+  var r=getRating2D(pct,0,0); // 无 diff=3 数据，默认中难度，仅用于维度星级展示
   return r;
 }
 
@@ -381,18 +399,21 @@ function showResult(){
   var min=Math.floor(duration/60),sec=duration%60;
   var durStr=min>0?min+'分'+sec+'秒':sec+'秒';
 
-  // 计算答对题的平均难度（用于难度组判定）
-  var correctDiffs=[];
+  // 统计 diff=3 题目的表现（用于难度组判定）
+  // 规则：diff=3 做题数≥4 且 正确率≥50% → 高难度组
+  var diff3Count=0, diff3Correct=0;
   for(var i=0;i<selectedQ.length;i++){
     if(!userAnswers[i])continue;
     var q=selectedQ[i],ua=userAnswers[i];
-    var maxS=q.type==='multiple'||q.type==='rank'?2*diffCoeff(q.diff):diffCoeff(q.diff);
-    if(ua.score>=maxS)correctDiffs.push(q.diff);
+    if(q.diff===3){
+      diff3Count++;
+      // 部分分(>0)视为触及 diff=3 天花板，计入正确
+      if(ua.score>0) diff3Correct++;
+    }
   }
-  var avgDiff=correctDiffs.length>0?correctDiffs.reduce(function(a,b){return a+b;},0)/correctDiffs.length:1;
 
-  // 二维评级（基于答对题平均难度）
-  var rating=getRating2D(pct,avgDiff);
+  // 二维评级（基于 diff=3 表现）
+  var rating=getRating2D(pct,diff3Count,diff3Correct);
 
   var html='<div class="result-header"><h1>数据思维能力测评报告</h1>';
   if(userName){html+='<div class="user-name-label">'+userName+'</div>';}
@@ -425,6 +446,7 @@ function showResult(){
 
   html+='<div class="result-actions">';
   html+='<button class="btn btn-primary" onclick="downloadPdf()">\ud83d\udcc4 导出 PDF 报告</button>';
+  html+='<button class="btn btn-outline" onclick="showMistakeReview()">\ud83d\udd0d 查看错题解析</button>';
   html+='<button class="btn btn-restart" onclick="location.reload()">重新测评</button>';
   html+='</div>';
 
@@ -600,9 +622,8 @@ function uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration,ratin
       if(!ua)continue;
       var correctAns=q.ans;
       var userAns=ua.answer;
-      // 严格判分: 得分<满分 → 错误 (部分分不计入正确)
-      var maxScore=q.type==='multiple'||q.type==='rank'?2*diffCoeff(q.diff):diffCoeff(q.diff);
-      var isCorrect=ua.score>=maxScore;
+      // 判分逻辑: 得分>0 → 视为正确（部分分也体现能力）, score 字段保留完整得分数值
+      var isCorrect=ua.score>0;
       answers.push({
         order:i+1, qid:q.id, dim:q.dim,
         question:q.q,
@@ -630,10 +651,13 @@ function uploadResults(pct,totalScore,totalMax,dimScores,dimMaxes,duration,ratin
 
 function getDimDesc(dim,pct){
   var D={
-    1:{h:'你对家庭账单上的数字变化非常敏锐。看到开支突然翻倍，你会本能地排查是真实花了更多钱，还是换了记账软件导致归类变了、或者银行系统延迟入账。你能辨别什么是真正的异常，什么是看起来吓人但其实不奇怪的正常波动。',m:'你能发现大部分明显的账单异常（比如电费突然暴涨），但对于更隐蔽的问题——比如换了统计口径导致数据看上去变了但实际上没变——还需要多积累经验。',l:'你对账单数据的准确性和一致性问题还不够敏感。建议养成习惯：看到任何数字明显变化时，先问自己"这个变化是真实发生的，还是记录方式变了造成的错觉"。'},
-    2:{h:'你善于将模糊业务概念拆解为可量化子维度，在数据缺失时仍能构建上下界估算，并能主动暴露代理指标的效度缺陷。',m:'你具备基本的量化拆解能力，但在数据稀疏场景下的推断和不确定性处理方面还需提升。',l:'你在将抽象概念转化为可量化指标方面还需大量练习，建议从"拆解"思维入手：任何模糊概念都可以拆为2-3个可观测的子维度。'},
-    3:{h:'你具备强烈的因果推断意识，能本能地追问"还有什么别的解释？"，并能区分随机实验与自然实验的适用边界。',m:'你能识别大部分因果谬误，但对更复杂的因果识别策略（如外生变量、断点设计）还需更深入学习。',l:'你容易将相关性等同于因果性，建议养成"这个结论还有什么别的解释？"的本能反应，学习基本的因果推断方法。'},
-    4:{h:'你能在信息不完备时做出"带条件的决策"，善于用损失代价而非统计数值驱动最终选择，并能区分可逆与不可逆决策。',m:'你具备基本的决策校准意识，但在多目标冲突和探索-利用权衡方面还需提升。',l:'你在决策校准方面还需加强，建议学习"期望价值"思维和"可逆vs不可逆决策"的区分框架。'}
+    1:{h:'你对数字特别"较真"。看到报表上一个数突然涨了很多，你不会直接接受，而是先想：是不是算错了？是不是统计方式变了？跟上次的口径一样吗？你能分清楚什么情况是真的出了问题，什么情况是"看着吓人其实没事"。',m:'你能发现明显的数字异常（比如一个指标突然翻倍），但如果问题藏得比较深——比如统计方式悄悄变了，导致你在对比的两个数其实不是一个口径——你有时候会被数字误导。还需要多练练"这个数到底是怎么算出来的"这种追问习惯。',l:'你对数字的准确性还不够警觉。建议养成一个小习惯：每次看到一个让你意外的数，别急着相信，先问问自己——这个数是怎么算出来的？口径跟之前一样吗？有没有可能记错了？'},
+
+    2:{h:'你善于把模糊的想法翻译成可以衡量的具体指标。即使数据不完整，你也能做出合理的范围估算，而不是摊手说"没数据没法做"。你还会追问：这个指标真的能反映我们想衡量的事情吗？会不会漏掉了什么？',m:'你能把大部分问题拆成可衡量的维度，但在数据很少、信息模糊的情况下，你的推断和估算还需要更扎实。另外，对你使用的每个衡量指标，偶尔也需要多一分"它真的准吗"的质疑。',l:'你在"把想法变成数字"这一步还需要多练。建议从一个简单习惯开始：遇到任何模糊的判断（比如"这个方案好不好""这个团队效率高不高"），试着拆成2-3个可以具体看、可以具体比的东西，别只停留在感觉上。'},
+
+    3:{h:'你有一种本能的追问习惯：看到"因为A所以B"的结论，你第一反应是"会不会是别的原因导致的？"。你很清楚：两件事同时发生或先后发生，不等于A导致了B。你能判断什么样的对比能真正支撑因果关系，什么样的只能说明表面关联。',m:'你能识别大部分"把相关当因果"的逻辑错误。但面对更复杂的情况——比如多个因素同时在起作用、或者事情是自然发生的而非刻意测试的——你的判断还需要更精细。',l:'你容易把"两件事同时发生"当成"一件事导致了另一件事"。建议培养一个思维习惯：每次听到一个因果结论，先问自己"这件事还有没有别的可能解释？"'},
+
+    4:{h:'你的一个突出特点是：即便信息不完整，你也敢做决策——只不过你的决策是"有条件的"（"如果是A情况我就选X，如果是B情况就选Y"）。你更关心最坏会损失多少，而不是平均大概能怎样。你清楚什么时候该立刻拍板，什么时候该再观望收集更多信息。',m:'你有基本的"决策不盲目"的意识，不只盯着平均数做判断。但在同时面对多个目标、或者需要在"继续尝试新方案还是守住现有方案"之间做取舍时，还需要更多练习。',l:'你做判断时，容易只盯着"最好的情况"或"平均的情况"，忽略了最坏会怎样。建议学习两个思维习惯：①做任何决定前，先想"最坏会怎样？我能承受吗？"；②区分"做了还能反悔"和"做了就回不了头"的决策——前者可以快，后者得慎重。'}
   };
   var r=D[dim];
   return pct>=75?r.h:pct>=50?r.m:r.l;
@@ -641,10 +665,85 @@ function getDimDesc(dim,pct){
 
 function getWeaknessAdvice(dim){
   var A={
-    1:'建议从以下方面提升对账单数据的敏感度：①看到任何开支大幅变动，先排查是不是换了记账方式、分类规则变了、或者银行账单延迟；②建立"常见假异常清单"，比如年底奖金结算导致某个月收入翻倍、缓存未更新导致重复计算等；③每次看到让你惊讶的数字，先问自己"这个数字可能是怎么统计出来的，有没有被录错或算错"。',
-    2:'建议从以下方面提升：①练习将每个模糊概念拆解为2-3个可观测子维度的习惯；②学习费米估算法，在数据缺失时构建上下界；③关注"指标效度"——每个代理指标都问"它到底在度量什么，遗漏了什么"。',
-    3:'建议重点学习因果推断基础：①掌握"相关≠因果"的常见模式（混杂、自选择、反向因果）；②学习工具变量、双重差分等基本因果识别策略；③养成"看到结论先找替代解释"的思维习惯。',
-    4:'建议重点培养：①期望价值思维——任何决策先算期望收益和最坏情况；②可逆vs不可逆决策区分——前者快速试错，后者提高证据门槛；③探索-利用意识——不要永远只选已知最优，要留出探索空间。'
+    1:'建议从以下方面提升数据敏感度：①看到任何数字大幅变动时，先别急着接受结论，排查一下是不是统计口径变了、数据来源切换了、或者计算方式调整了；②建立自己的"异常直觉清单"——哪些波动是正常节奏（比如月初月末的流量高峰），哪些是真的值得警惕的信号；③每次看到让你意外或惊讶的数字，先问自己一句"这个数可能是怎么算出来的，有没有算错或记错"，养成质疑数据的习惯。',
+    2:'建议从以下方面提升：①练习"拆解"——遇到任何模糊的判断，都试着拆成2-3个可以具体衡量的小指标，别只停留在感觉层面；②学习在数据不全时做范围估算——"虽然没有精确数字，但我可以确定它大概在什么区间"；③对每个用来做判断的指标，多问一句"用它来衡量这件事，真的准吗？有没有漏掉更重要的方面？"。',
+    3:'建议重点练习因果思考：①下次看到"因为A所以B"的说法时，主动想"会不会是C导致的？会不会B反过来影响了A？会不会只是恰好同时发生了？"；②多留意生活中的因果错觉——比如"换了新流程后业绩涨了"不一定就是流程的功劳；③养成先想"还有没有别的解释"，再下判断的习惯。',
+    4:'建议重点培养：①做判断前，不只考虑"大概能怎样"，也问自己"最坏能怎样？我能接受吗？"；②区分两类决策——能反悔的（试错成本低，可以快速行动）和回不了头的（需要更多信息再定）；③给自己留一点"试试别的选项"的空间，不要永远只选最保险的那一个。'
   };
   return A[dim];
+}
+
+// === 错题解析 ===
+function showMistakeReview(){
+  var mistakes=[], TYPE_NAMES={single:'单选题',multiple:'多选题',judge:'判断题',rank:'排序题'};
+  for(var i=0;i<selectedQ.length;i++){
+    if(!userAnswers[i])continue;
+    var q=selectedQ[i], ua=userAnswers[i], maxS=q.pts*diffCoeff(q.diff);
+    if(ua.score<maxS) mistakes.push({q:q, ua:ua, idx:i});
+  }
+  if(!mistakes.length){
+    var msg=document.createElement('div');
+    msg.className='mistake-card'; msg.style.textAlign='center'; msg.style.padding='40px';
+    msg.innerHTML='<div style="font-size:48px;margin-bottom:16px">🎉</div><h2 style="color:var(--accent)">全部答对！</h2><p style="color:var(--text2);margin-top:8px">没有错题可解析，数据思维非常扎实。</p>';
+    var wrap=document.getElementById('mistakeReviewScreen');
+    wrap.innerHTML='<div class="mistake-header"><h1>错题解析</h1></div>';
+    wrap.appendChild(msg);
+    wrap.innerHTML+='<div class="result-actions"><button class="btn btn-secondary" onclick="goBackToResult()">← 返回报告</button></div>';
+    document.getElementById('resultScreen').classList.add('hidden');
+    wrap.classList.remove('hidden');
+    return;
+  }
+  var html='<div class="mistake-header"><h1>错题解析</h1>';
+  html+='<div class="mistake-count">共 '+mistakes.length+' 道错题（含部分答对）</div></div>';
+  for(var i=0;i<mistakes.length;i++){
+    var m=mistakes[i], q=m.q, ua=m.ua, maxS=q.pts*diffCoeff(q.diff);
+    var fullCorrect=ua.score>=maxS;
+    html+='<div class="mistake-card">';
+    html+='<div class="mc-meta">';
+    html+='<span class="mc-dim-badge">'+DIM_NAMES[q.dim]+'</span>';
+    html+='<span class="mc-diff-badge">'+(q.diff===3?'困难':q.diff===2?'中等':'简单')+' · '+TYPE_NAMES[q.type]+'</span>';
+    html+='</div>';
+    html+='<div class="mc-q">📌 第'+(m.idx+1)+'题 · '+q.q+'</div>';
+    // User answer & correct answer
+    if(q.type==='rank'){
+      var correctOrder=q.ans.map(function(p){return String.fromCharCode(65+p);}).join(' → ');
+      var userOrder=ua.answer&&ua.answer.length?ua.answer.map(function(v,i){
+        var label=String.fromCharCode(65+i);
+        return label+'→第'+(v+1)+'位';
+      }).join('，'):'未作答';
+      html+='<div class="mc-answer-row"><span class="mc-your">你的排序：'+userOrder+'</span></div>';
+      html+='<div class="mc-answer-row"><span class="mc-correct">正确顺序：'+correctOrder+'</span></div>';
+    }else if(q.type==='judge'){
+      var userTxt=ua.answer===true?'正确':ua.answer===false?'错误':'未作答';
+      var correctTxt=q.ans?'正确':'错误';
+      html+='<div class="mc-answer-row"><span class="mc-your">你的答案：'+userTxt+'</span><span class="mc-correct">正确答案：'+correctTxt+'</span></div>';
+    }else if(q.type==='multiple'){
+      var userStr=ua.answer&&ua.answer.length?ua.answer.map(function(x){return String.fromCharCode(65+x);}).join('、'):'未作答';
+      var correctStr=q.ans.map(function(x){return String.fromCharCode(65+x);}).join('、');
+      html+='<div class="mc-answer-row"><span class="mc-your">你的答案：'+userStr+'</span><span class="mc-correct">正确答案：'+correctStr+'</span></div>';
+    }else{
+      var userOpt=ua.answer!=null?String.fromCharCode(65+ua.answer):'未作答';
+      var correctOpt=String.fromCharCode(65+q.ans);
+      html+='<div class="mc-answer-row"><span class="mc-your">你的答案：'+userOpt+'</span><span class="mc-correct">正确答案：'+correctOpt+'</span></div>';
+    }
+    // Explanation
+    if(q.exp){
+      html+='<div class="mc-exp">'+q.exp+'</div>';
+    }else{
+      html+='<div class="mc-no-exp">该题解析尚未编写，敬请期待</div>';
+    }
+    html+='</div>';
+  }
+  html+='<div class="result-actions"><button class="btn btn-secondary" onclick="goBackToResult()">← 返回报告</button></div>';
+  var wrap=document.getElementById('mistakeReviewScreen');
+  wrap.innerHTML=html;
+  document.getElementById('resultScreen').classList.add('hidden');
+  wrap.classList.remove('hidden');
+  wrap.scrollIntoView({behavior:'smooth'});
+}
+
+function goBackToResult(){
+  document.getElementById('mistakeReviewScreen').classList.add('hidden');
+  document.getElementById('resultScreen').classList.remove('hidden');
+  document.getElementById('resultScreen').scrollIntoView({behavior:'smooth'});
 }
