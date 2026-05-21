@@ -373,7 +373,7 @@ function showResult(){
   html+='<div class="level-badge '+rating.cls+'">'+rating.level+'</div>';
   html+='<div class="tier-badge">'+rating.tierLabel+'</div>';
   html+='<div class="level-desc">'+rating.desc+'</div>';
-  html+='<div class="score-label">满分 '+totalMaxR+' 分 | 用时 '+durStr+'</div></div>';
+  html+='</div>';
 
   html+='<div class="result-card"><h2>能力概览</h2><div class="dim-list">';
   for(var d=1;d<=4;d++){
